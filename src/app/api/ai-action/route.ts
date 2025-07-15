@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
           "X-RateLimit-Limit": result.limit.toString(),
           "X-RateLimit-Remaining": result.remaining.toString(),
         },
-      }
+      },
     );
   }
   const body: {

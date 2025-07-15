@@ -123,7 +123,7 @@ export default function NewNotePage() {
   async function handleAIAction(
     action: string,
     question?: string,
-    overrideContent?: string
+    overrideContent?: string,
   ) {
     setAiAction(action);
     setAiResult("");
@@ -267,7 +267,7 @@ export default function NewNotePage() {
                     await handleAIAction(
                       aiEditAction,
                       undefined,
-                      aiEditContent
+                      aiEditContent,
                     );
                   }}
                   className="bg-background p-6 rounded shadow-lg flex flex-col gap-4 min-w-[320px]"
