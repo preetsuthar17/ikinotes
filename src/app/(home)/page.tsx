@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { getNotes, addNote, Note } from "@/lib/note-storage";
 import { useRouter } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
-import { NotebookPen } from "lucide-react";
+import { Github, NotebookPen } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -34,8 +35,13 @@ export default function Home() {
   return (
     <main className="flex flex-col min-h-screen max-w-2xl mx-auto py-12 px-4 gap-14">
       <header className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Ikinotes</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Iki</h1>
         <div className="flex gap-2">
+          <Button size={"icon"} variant={"secondary"} asChild>
+            <Link href={"http://github.com/preetsuthar17/iki"} target="_blank">
+              <Github />
+            </Link>
+          </Button>
           <Button onClick={handleCreateNote}>
             New Note
             <NotebookPen />

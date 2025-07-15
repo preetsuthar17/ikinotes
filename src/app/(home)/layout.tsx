@@ -8,7 +8,7 @@ const cascadiaMono = Cascadia_Code({
 });
 
 export const metadata: Metadata = {
-  title: "beautiful open-source note taking application — Ikinotes",
+  title: "beautiful open-source note taking application — Iki",
   description: "beautiful open-source notes",
 };
 
