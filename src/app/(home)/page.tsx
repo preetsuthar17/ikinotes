@@ -55,10 +55,10 @@ export default function Home() {
               {notes.map((note, idx) => (
                 <div
                   key={note.id}
-                  className="text-[#1d4ed8] flex items-center justify-between w-full"
+                  className="text-[#1d4ed8] flex items-center justify-between w-full flex-wrap max-sm:flex-col max-sm:items-start gap-4"
                 >
                   <button
-                    className="note-link text-base text-left flex-1 flex items-center gap-1 transition-opacity group-hover:opacity-40 hover:!opacity-100"
+                    className="note-link text-base text-left flex-1 flex items-center gap-1 transition-opacity group-hover:opacity-40 hover:!opacity-100 "
                     onMouseEnter={(e) =>
                       e.currentTarget.classList.add("!opacity-100")
                     }
@@ -70,7 +70,7 @@ export default function Home() {
                   >
                     {note.title || "Untitled Note"}
                   </button>
-                  <span className="text-muted-foreground ml-4 min-w-[90px] text-right">
+                  <span className="text-muted-foreground min-w-[90px] text-right">
                     {note.createdAt
                       ? new Date(note.createdAt).toISOString().slice(0, 10)
                       : ""}

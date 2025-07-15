@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Home, Trash2 } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 import { Sparkles } from "lucide-react";
+import { Alert } from "@/components/ui/alert";
 
 export default function NewNotePage() {
   const router = useRouter();
@@ -18,7 +19,6 @@ export default function NewNotePage() {
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const saveTimeout = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState("");
   const [summarizing, setSummarizing] = useState(false);
@@ -33,14 +33,29 @@ export default function NewNotePage() {
   const [aiEditAction, setAiEditAction] = useState("rewrite");
   const [aiHeading, setAiHeading] = useState("");
   const [headingLoading, setHeadingLoading] = useState(false);
+  const [unsaved, setUnsaved] = useState(false);
 
   function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setContent(e.target.value);
+    setUnsaved(true);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height =
         textareaRef.current.scrollHeight + "px";
     }
+  }
+
+  function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setTitle(e.target.value);
+    setUnsaved(true);
+  }
+
+  function handleSave() {
+    if (!note) return;
+    const updated = { ...note, content, title, updatedAt: Date.now() };
+    updateNote(updated);
+    setUnsaved(false);
+    setNote(updated);
   }
 
   useEffect(() => {
@@ -54,19 +69,6 @@ export default function NewNotePage() {
     }
     setLoading(false);
   }, [id]);
-
-  useEffect(() => {
-    if (!note) return;
-    if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => {
-      const updated = { ...note, content, title, updatedAt: Date.now() };
-      updateNote(updated);
-      setNote(updated);
-    }, 500);
-    return () => {
-      if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    };
-  }, [title, content]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -123,7 +125,7 @@ export default function NewNotePage() {
   async function handleAIAction(
     action: string,
     question?: string,
-    overrideContent?: string,
+    overrideContent?: string
   ) {
     setAiAction(action);
     setAiResult("");
@@ -165,7 +167,7 @@ export default function NewNotePage() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen max-w-2xl mx-auto py-12 px-4 gap-14">
+    <main className="flex flex-col min-h-screen max-w-2xl mx-auto py-12 px-4 gap-14 mb-12">
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <Loader />
@@ -189,6 +191,13 @@ export default function NewNotePage() {
               <Trash2 className="w-5 h-5 text-destructive" />
             </Button>
           </nav>
+          <Input
+            className=" text-[#1d4ed8]  w-full text-2xl font-semibold bg-transparent p-0 focus-visible:outline-none focus-visible:ring-0  focus-visible:border-0 border-none focus-visible:shadow-none"
+            value={title}
+            onChange={handleTitleChange}
+            placeholder="Note title..."
+            style={{ minHeight: 0, boxShadow: "none", border: "none" }}
+          />
           <div className="flex flex-col gap-8 flex-1">
             <form
               onSubmit={(e) => {
@@ -267,7 +276,7 @@ export default function NewNotePage() {
                     await handleAIAction(
                       aiEditAction,
                       undefined,
-                      aiEditContent,
+                      aiEditContent
                     );
                   }}
                   className="bg-background p-6 rounded shadow-lg flex flex-col gap-4 min-w-[320px]"
@@ -315,13 +324,7 @@ export default function NewNotePage() {
                 </div>
               )}
             </div>
-            <Input
-              className=" text-[#1d4ed8]  w-full text-2xl font-semibold bg-transparent p-0 focus-visible:outline-none focus-visible:ring-0  focus-visible:border-0 border-none focus-visible:shadow-none"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Note title..."
-              style={{ minHeight: 0, boxShadow: "none", border: "none" }}
-            />
+
             <Textarea
               ref={textareaRef}
               className="w-full resize-none bg-transparent text-base focus:outline-none focus:ring-0 border-none shadow-none p-0 h-auto"
@@ -330,6 +333,17 @@ export default function NewNotePage() {
               placeholder="Write your note..."
               style={{ boxShadow: "none", border: "none", overflow: "hidden" }}
             />
+            {unsaved && (
+              <Alert
+                variant={"info"}
+                className="text-center rounded-0 fixed bottom-3 right-1/2 translate-x-1/2 max-w-[95%] w-fit"
+              >
+                You have unsaved changes.
+              </Alert>
+            )}
+            <Button onClick={handleSave} disabled={!unsaved} variant="default">
+              Save
+            </Button>
           </div>
         </>
       )}
