@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { Cascadia_Code } from "next/font/google";
 import "../globals.css";
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
+const cascadiaMono = Cascadia_Code({
+  variable: "--font-cascadia-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Ikinotes",
+  title: "beautiful open-source note taking application — Ikinotes",
   description: "beautiful open-source notes",
 };
 
@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={` ${jetbrainsMono.className} antialiased`}>
+      <body className={` ${cascadiaMono.className} antialiased`}>
         {children}
       </body>
     </html>

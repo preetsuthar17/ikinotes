@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "../globals.css";
 
 export const metadata: Metadata = {
-  title: "Ikinotes",
+  title: "beautiful open-source note taking application — Ikinotes",
   description: "beautiful open-source notes",
 };
 
