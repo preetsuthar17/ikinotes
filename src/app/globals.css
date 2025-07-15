@@ -3,7 +3,7 @@
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: var(--font-geist-sans) !important;
+  font-family: "JetBrains Mono", monospace;
 }
 
 @theme {

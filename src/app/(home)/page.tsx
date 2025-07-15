@@ -1,33 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-} from "@/components/ui/dropdown-menu";
-import {
-  getNotes,
-  getFolders,
-  addNote,
-  addFolder,
-  deleteNote,
-  deleteFolder,
-  moveNoteToFolder,
-  Note,
-  Folder,
-} from "@/lib/note-storage";
+import { getNotes, addNote, Note } from "@/lib/note-storage";
 import { useRouter } from "next/navigation";
-import { NoteCard } from "@/components/NoteCard";
-import Image from "next/image";
 import { Loader } from "@/components/ui/loader";
+import { NotebookPen } from "lucide-react";
 
 export default function Home() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -53,38 +31,53 @@ export default function Home() {
     router.push(`/new?id=${id}`);
   }
 
-  function handleDeleteNote(id: string) {
-    deleteNote(id);
-    setNotes(getNotes());
-  }
-
   return (
-    <main className="flex flex-col min-h-screen max-w-2xl mx-auto py-8 px-4 gap-8">
+    <main className="flex flex-col min-h-screen max-w-2xl mx-auto py-12 px-4 gap-14">
       <header className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">ikinotes</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Ikinotes</h1>
         <div className="flex gap-2">
-          <Button onClick={handleCreateNote}>New Note</Button>
+          <Button onClick={handleCreateNote}>
+            New Note
+            <NotebookPen />
+          </Button>
         </div>
       </header>
       <section>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2">
           {loading ? (
-            <div className="col-span-2 flex justify-center py-12">
+            <div className="w-full flex justify-center py-12">
               <Loader />
             </div>
           ) : notes.length === 0 ? (
-            <div className="col-span-2 text-muted-foreground">
-              No notes yet.
-            </div>
+            <div className="text-muted-foreground">No notes yet.</div>
           ) : (
-            notes.map((note) => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                onDelete={handleDeleteNote}
-                onOpen={(id) => router.push(`/new?id=${id}`)}
-              />
-            ))
+            <div className="flex flex-col gap-2 group">
+              {notes.map((note, idx) => (
+                <div
+                  key={note.id}
+                  className="text-[#1d4ed8] flex items-center justify-between w-full"
+                >
+                  <button
+                    className="note-link text-base text-left flex-1 flex items-center gap-1 transition-opacity group-hover:opacity-40 hover:!opacity-100"
+                    onMouseEnter={(e) =>
+                      e.currentTarget.classList.add("!opacity-100")
+                    }
+                    onMouseLeave={(e) =>
+                      e.currentTarget.classList.remove("!opacity-100")
+                    }
+                    onClick={() => router.push(`/new?id=${note.id}`)}
+                    style={{ wordBreak: "break-all" }}
+                  >
+                    {note.title || "Untitled Note"}
+                  </button>
+                  <span className="text-muted-foreground ml-4 min-w-[90px] text-right">
+                    {note.createdAt
+                      ? new Date(note.createdAt).toISOString().slice(0, 10)
+                      : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </section>
