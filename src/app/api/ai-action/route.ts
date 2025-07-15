@@ -1,8 +1,18 @@
 import { NextRequest } from "next/server";
 import { groq } from "@ai-sdk/groq";
 import { streamText } from "ai";
+import { sanitizeString } from "@/lib/utils";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
-export const runtime = "edge";
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+const ratelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(5, "5 m"),
+});
 
 const PROMPTS = {
   summarize:
@@ -26,13 +36,34 @@ const PROMPTS = {
 };
 
 export async function POST(req: NextRequest) {
+  // Use IP address for per-user rate limiting
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
+  const result = await ratelimit.limit(ip);
+  if (!result.success) {
+    return new Response(
+      JSON.stringify({
+        message: "The request has been rate limited.",
+        rateLimitState: result,
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "X-RateLimit-Limit": result.limit.toString(),
+          "X-RateLimit-Remaining": result.remaining.toString(),
+        },
+      }
+    );
+  }
   const body: {
     content?: string;
     action?: keyof typeof PROMPTS;
     question?: string;
   } = await req.json();
   let { content, action, question } = body;
-  content = (content ?? "").trim();
+  content = sanitizeString((content ?? "").trim());
+  if (question) question = sanitizeString(question);
   if (!content || !action || !(action in PROMPTS)) {
     return new Response("Missing or invalid input", { status: 400 });
   }
@@ -48,6 +79,8 @@ export async function POST(req: NextRequest) {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-store",
+      "X-RateLimit-Limit": result.limit.toString(),
+      "X-RateLimit-Remaining": result.remaining.toString(),
     },
   });
 }
