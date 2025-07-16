@@ -7,10 +7,20 @@ import { useRouter } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
 import { Github, NotebookPen } from "lucide-react";
 import Link from "next/link";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tagFilter, setTagFilter] = useState<string>("all");
+  const [dateOrder, setDateOrder] = useState<"newest" | "oldest">("newest");
   const router = useRouter();
 
   useEffect(() => {
@@ -32,6 +42,35 @@ export default function Home() {
     router.push(`/new?id=${id}`);
   }
 
+  // Get all unique tags from notes
+  const allTags = Array.from(new Set(notes.flatMap((note) => note.tags || [])));
+
+  // Filter notes by tag
+  const filteredNotes = notes.filter((note) => {
+    if (tagFilter === "all") return true;
+    return note.tags && note.tags.includes(tagFilter);
+  });
+
+  // Sort notes by date
+  filteredNotes.sort((a, b) =>
+    dateOrder === "newest"
+      ? b.createdAt - a.createdAt
+      : a.createdAt - b.createdAt
+  );
+
+  // Group notes by first tag, untagged separately
+  const grouped: Record<string, Note[]> = {};
+  const untagged: Note[] = [];
+  filteredNotes.forEach((note) => {
+    if (note.tags && note.tags.length > 0) {
+      const tag = note.tags[0];
+      if (!grouped[tag]) grouped[tag] = [];
+      grouped[tag].push(note);
+    } else {
+      untagged.push(note);
+    }
+  });
+
   return (
     <main className="flex flex-col min-h-screen max-w-2xl mx-auto py-12 px-4 gap-14">
       <header className="flex items-center justify-between">
@@ -49,42 +88,108 @@ export default function Home() {
         </div>
       </header>
       <section>
-        <div className="flex flex-col gap-2">
-          {loading ? (
-            <div className="w-full flex justify-center py-12">
-              <Loader />
+        <div className="flex flex-col gap-14">
+          {/* Filters */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="w-40 min-w-[120px]">
+              <Select value={tagFilter} onValueChange={setTagFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tags</SelectItem>
+                  {allTags.map((tag) => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          ) : notes.length === 0 ? (
-            <div className="text-muted-foreground">No notes yet.</div>
-          ) : (
-            <div className="flex flex-col gap-2 group">
-              {notes.map((note, idx) => (
-                <div
-                  key={note.id}
-                  className="text-[#1d4ed8] flex items-center justify-between w-full flex-wrap max-sm:flex-col max-sm:items-start gap-4"
-                >
-                  <button
-                    className="note-link text-base text-left flex-1 flex items-center gap-1 transition-opacity group-hover:opacity-40 hover:!opacity-100 "
-                    onMouseEnter={(e) =>
-                      e.currentTarget.classList.add("!opacity-100")
-                    }
-                    onMouseLeave={(e) =>
-                      e.currentTarget.classList.remove("!opacity-100")
-                    }
-                    onClick={() => router.push(`/new?id=${note.id}`)}
-                    style={{ wordBreak: "break-all" }}
-                  >
-                    {note.title || "Untitled Note"}
-                  </button>
-                  <span className="text-muted-foreground min-w-[90px] text-right">
-                    {note.createdAt
-                      ? new Date(note.createdAt).toISOString().slice(0, 10)
-                      : ""}
-                  </span>
-                </div>
-              ))}
+            <div className="w-40 min-w-[120px]">
+              <Select
+                value={dateOrder}
+                onValueChange={(v) => setDateOrder(v as "newest" | "oldest")}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort by date" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
+          </div>
+          <div>
+            {/* Notes List */}
+            {loading ? (
+              <div className="w-full flex justify-center py-12">
+                <Loader />
+              </div>
+            ) : filteredNotes.length === 0 ? (
+              <div className="text-muted-foreground">No notes found.</div>
+            ) : (
+              <div className="flex flex-col gap-8">
+                {/* Grouped by tag */}
+                {Object.entries(grouped).map(([tag, notes]) => (
+                  <div key={tag} className="flex flex-col gap-2">
+                    <div className="font-semibold text-base text-foreground mb-1">
+                      {tag}
+                    </div>
+                    {notes.map((note) => (
+                      <div
+                        key={note.id}
+                        className="text-[#1d4ed8] flex items-center justify-between w-full flex-wrap max-sm:flex-col max-sm:items-start gap-4 cursor-pointer"
+                        onClick={() => router.push(`/new?id=${note.id}`)}
+                      >
+                        <p
+                          className="note-link text-base text-left flex-1 flex items-center gap-1 transition-opacity group-hover:opacity-40 hover:!opacity-100 "
+                          style={{ wordBreak: "break-all" }}
+                        >
+                          {note.title || "Untitled Note"}
+                        </p>
+                        <span className="text-muted-foreground min-w-[90px] text-right">
+                          {note.createdAt
+                            ? new Date(note.createdAt)
+                                .toISOString()
+                                .slice(0, 10)
+                            : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+                <Separator />
+                {/* Untagged notes */}
+                {untagged.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    {untagged.map((note) => (
+                      <div
+                        key={note.id}
+                        className="text-[#1d4ed8] flex items-center justify-between w-full flex-wrap max-sm:flex-col max-sm:items-start gap-4 cursor-pointer"
+                        onClick={() => router.push(`/new?id=${note.id}`)}
+                      >
+                        <p
+                          className="note-link text-base text-left flex-1 flex items-center gap-1 transition-opacity group-hover:opacity-40 hover:!opacity-100 "
+                          style={{ wordBreak: "break-all" }}
+                        >
+                          {note.title || "Untitled Note"}
+                        </p>
+                        <span className="text-muted-foreground min-w-[90px] text-right">
+                          {note.createdAt
+                            ? new Date(note.createdAt)
+                                .toISOString()
+                                .slice(0, 10)
+                            : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </main>

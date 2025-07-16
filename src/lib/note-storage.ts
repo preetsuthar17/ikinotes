@@ -3,6 +3,7 @@ export type Note = {
   id: string;
   title: string;
   content: string;
+  tags?: string[];
   folderId?: string;
   createdAt: number;
   updatedAt: number;
@@ -47,10 +48,10 @@ export function deleteNote(id: string): void {
 
 export function moveNoteToFolder(
   noteId: string,
-  folderId: string | undefined,
+  folderId: string | undefined
 ): void {
   const notes = getNotes().map((n) =>
-    n.id === noteId ? { ...n, folderId } : n,
+    n.id === noteId ? { ...n, folderId } : n
   );
   saveNotes(notes);
 }
@@ -77,7 +78,7 @@ export function deleteFolder(id: string): void {
   saveFolders(folders);
   // Optionally, remove folderId from notes in this folder
   const notes = getNotes().map((n) =>
-    n.folderId === id ? { ...n, folderId: undefined } : n,
+    n.folderId === id ? { ...n, folderId: undefined } : n
   );
   saveNotes(notes);
 }

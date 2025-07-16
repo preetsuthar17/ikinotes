@@ -10,6 +10,7 @@ import { ArrowLeft, Home, Trash2 } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 import { Sparkles } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
+import { TagInput } from "@/components/ui/tag-input";
 
 export default function NewNotePage() {
   const router = useRouter();
@@ -34,6 +35,8 @@ export default function NewNotePage() {
   const [aiHeading, setAiHeading] = useState("");
   const [headingLoading, setHeadingLoading] = useState(false);
   const [unsaved, setUnsaved] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
 
   function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setContent(e.target.value);
@@ -52,7 +55,7 @@ export default function NewNotePage() {
 
   function handleSave() {
     if (!note) return;
-    const updated = { ...note, content, title, updatedAt: Date.now() };
+    const updated = { ...note, content, title, tags, updatedAt: Date.now() };
     updateNote(updated);
     setUnsaved(false);
     setNote(updated);
@@ -61,12 +64,16 @@ export default function NewNotePage() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    const found = getNotes().find((n) => n.id === id);
+    const notes = getNotes();
+    const found = notes.find((n) => n.id === id);
     if (found) {
       setNote(found);
       setContent(found.content);
       setTitle(found.title);
+      setTags(found.tags || []);
     }
+    // Gather all unique tags from all notes
+    setAllTags(Array.from(new Set(notes.flatMap((n) => n.tags || []))));
     setLoading(false);
   }, [id]);
 
@@ -152,8 +159,10 @@ export default function NewNotePage() {
       }
       result += decoder.decode();
       if (action === "ask" || action === "summarize") setAiResult(result);
-      else if (action === "heading") setTitle(result.trim());
-      else setContent(result);
+      else if (action === "heading") {
+        setTitle(result.trim());
+        setUnsaved(true);
+      } else setContent(result);
     } catch (e) {
       setAiError("Failed to process AI action");
     }
@@ -197,6 +206,16 @@ export default function NewNotePage() {
             onChange={handleTitleChange}
             placeholder="Note title..."
             style={{ minHeight: 0, boxShadow: "none", border: "none" }}
+          />
+          <TagInput
+            tags={tags}
+            onTagsChange={(newTags) => {
+              setTags(newTags);
+              setUnsaved(true);
+            }}
+            placeholder="Add tags..."
+            className="mb-2"
+            suggestions={allTags}
           />
           <div className="flex flex-col gap-8 flex-1">
             <form

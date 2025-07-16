@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cascadia_Code } from "next/font/google";
 import "../globals.css";
 import { Suspense } from "react";
+import { Loader } from "@/components/ui/loader";
 
 const cascadiaMono = Cascadia_Code({
   variable: "--font-cascadia-mono",
@@ -27,7 +28,15 @@ export default function RootLayout({
         ></script>
       </head>
       <body className={` ${cascadiaMono.className} antialiased`}>
-        <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        <Suspense
+          fallback={
+            <div className="h-screen w-screen flex items-center justify-center">
+              <Loader />
+            </div>
+          }
+        >
+          {children}
+        </Suspense>
       </body>
     </html>
   );

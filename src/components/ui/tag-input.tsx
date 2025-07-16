@@ -26,7 +26,7 @@ const tagInputVariants = cva(
       variant: "default",
       size: "default",
     },
-  },
+  }
 );
 
 export interface TagInputProps
@@ -49,6 +49,7 @@ export interface TagInputProps
   onClearAll?: () => void;
   disabled?: boolean;
   error?: boolean;
+  suggestions?: string[];
 }
 
 const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
@@ -66,17 +67,19 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
       allowDuplicates = false,
       onTagAdd,
       onTagRemove,
-      separator = /[\s,]+/,
+      separator = ",",
       clearAllButton = false,
       onClearAll,
       disabled,
       error,
+      suggestions = [],
       ...props
     },
-    ref,
+    ref
   ) => {
     const [inputValue, setInputValue] = React.useState("");
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const [isFocused, setIsFocused] = React.useState(false);
 
     const addTag = React.useCallback(
       (tag: string) => {
@@ -91,7 +94,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         onTagAdd?.(trimmedTag);
         setInputValue("");
       },
-      [tags, onTagsChange, onTagAdd, allowDuplicates, maxTags],
+      [tags, onTagsChange, onTagAdd, allowDuplicates, maxTags]
     );
 
     const removeTag = React.useCallback(
@@ -100,7 +103,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         onTagsChange(newTags);
         onTagRemove?.(tagToRemove);
       },
-      [tags, onTagsChange, onTagRemove],
+      [tags, onTagsChange, onTagRemove]
     );
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,7 +127,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" || e.key === "Tab") {
+      if (e.key === "Tab" || e.key === "Enter") {
         e.preventDefault();
         addTag(inputValue);
       } else if (
@@ -146,6 +149,20 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
       inputRef.current?.focus();
     };
 
+    // Filter suggestions: not already tagged, matches input, case-insensitive
+    const filteredSuggestions = React.useMemo(() => {
+      if (!inputValue.trim()) return [];
+      const lowerInput = inputValue.toLowerCase();
+      return suggestions
+        .filter(
+          (s) =>
+            !tags.includes(s) &&
+            s.toLowerCase().includes(lowerInput) &&
+            s.trim() !== ""
+        )
+        .slice(0, 6); // limit to 6 suggestions
+    }, [inputValue, suggestions, tags]);
+
     const chipSizeMapping = {
       sm: "sm" as const,
       default: "sm" as const,
@@ -162,7 +179,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
               size,
             }),
             "cursor-text",
-            className,
+            className
           )}
           onClick={handleContainerClick}
         >
@@ -185,7 +202,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                     size={chipSizeMapping[size || "default"]}
                     dismissible
                     onDismiss={() => removeTag(tag)}
-                    className="pointer-events-auto"
+                    className="pointer-events-auto rounded-card"
                   >
                     {tag}
                   </Chip>
@@ -201,16 +218,36 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
               placeholder={tags.length === 0 ? placeholder : ""}
               disabled={disabled || (maxTags ? tags.length >= maxTags : false)}
               className="flex-1 min-w-[120px] bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setTimeout(() => setIsFocused(false), 100)}
               {...props}
             />
           </div>
         </div>
+        {/* Suggestions dropdown */}
+        {isFocused && filteredSuggestions.length > 0 && (
+          <div className="absolute left-0 z-10 mt-1 w-full rounded-ele border border-border bg-popover shadow-lg text-sm max-h-48 overflow-auto">
+            {filteredSuggestions.map((sugg) => (
+              <button
+                key={sugg}
+                type="button"
+                className="w-full text-left px-3 py-2 hover:bg-accent transition-colors"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  addTag(sugg);
+                }}
+              >
+                {sugg}
+              </button>
+            ))}
+          </div>
+        )}
         {clearAllButton && tags.length > 0 && (
           <button
             type="button"
             onClick={handleClearAll}
             disabled={disabled}
-            className="absolute end-2 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-accent transition-colors disabled:pointer-events-none disabled:opacity-50"
+            className="absolute end-2 top-1/2 -translate-y-1/2 rounded-ele p-1 hover:bg-accent transition-colors disabled:pointer-events-none disabled:opacity-50"
             aria-label="Clear all tags"
           >
             <X size={14} className="text-muted-foreground" />
@@ -218,7 +255,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         )}
       </div>
     );
-  },
+  }
 );
 
 TagInput.displayName = "TagInput";
