@@ -11,7 +11,7 @@ const redis = new Redis({
 });
 const ratelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.fixedWindow(5, "5 m"),
+  limiter: Ratelimit.fixedWindow(15, "5 m"),
 });
 
 const PROMPTS = {
