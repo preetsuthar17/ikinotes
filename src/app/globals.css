@@ -3,7 +3,6 @@
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: "Cascadia Code", monospace;
 }
 
 @theme {

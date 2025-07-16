@@ -4,7 +4,7 @@ import "../globals.css";
 import { Suspense } from "react";
 import { Loader } from "@/components/ui/loader";
 
-const cascadiaMono = Cascadia_Code({
+const cascadiaCode = Cascadia_Code({
   variable: "--font-cascadia-mono",
   subsets: ["latin"],
 });
@@ -27,7 +27,7 @@ export default function RootLayout({
           src="https://assets.onedollarstats.com/stonks.js"
         ></script>
       </head>
-      <body className={` ${cascadiaMono.className} antialiased`}>
+      <body className={` ${cascadiaCode.className} antialiased`}>
         <Suspense
           fallback={
             <div className="h-screen w-screen flex items-center justify-center">

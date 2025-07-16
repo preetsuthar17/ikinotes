@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Cascadia_Code } from "next/font/google";
 import "../globals.css";
 
-const cascadiaMono = Cascadia_Code({
+const cascadiaCode = Cascadia_Code({
   variable: "--font-cascadia-mono",
   subsets: ["latin"],
 });
@@ -25,7 +25,7 @@ export default function RootLayout({
           src="https://assets.onedollarstats.com/stonks.js"
         ></script>
       </head>
-      <body className={` ${cascadiaMono.className} antialiased`}>
+      <body className={`${cascadiaCode.className} antialiased`}>
         {children}
       </body>
     </html>
