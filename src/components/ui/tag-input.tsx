@@ -80,6 +80,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     const [inputValue, setInputValue] = React.useState("");
     const inputRef = React.useRef<HTMLInputElement>(null);
     const [isFocused, setIsFocused] = React.useState(false);
+    const [highlightedIndex, setHighlightedIndex] = React.useState<number>(-1);
 
     const addTag = React.useCallback(
       (tag: string) => {
@@ -106,6 +107,25 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
       [tags, onTagsChange, onTagRemove]
     );
 
+    // Filter suggestions: not already tagged, matches input, case-insensitive
+    const filteredSuggestions = React.useMemo(() => {
+      if (!inputValue.trim()) return [];
+      const lowerInput = inputValue.toLowerCase();
+      return suggestions
+        .filter(
+          (s) =>
+            !tags.includes(s) &&
+            s.toLowerCase().includes(lowerInput) &&
+            s.trim() !== ""
+        )
+        .slice(0, 6); // limit to 6 suggestions
+    }, [inputValue, suggestions, tags]);
+
+    // Reset highlight when suggestions/input changes
+    React.useEffect(() => {
+      setHighlightedIndex(filteredSuggestions.length > 0 ? 0 : -1);
+    }, [filteredSuggestions.length, isFocused]);
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
 
@@ -127,6 +147,26 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Keyboard navigation for suggestions
+      if (isFocused && filteredSuggestions.length > 0) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setHighlightedIndex((prev) =>
+            prev < filteredSuggestions.length - 1 ? prev + 1 : 0
+          );
+          return;
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setHighlightedIndex((prev) =>
+            prev > 0 ? prev - 1 : filteredSuggestions.length - 1
+          );
+          return;
+        } else if (e.key === "Enter" && highlightedIndex >= 0) {
+          e.preventDefault();
+          addTag(filteredSuggestions[highlightedIndex]);
+          return;
+        }
+      }
       if (e.key === "Tab" || e.key === "Enter") {
         e.preventDefault();
         addTag(inputValue);
@@ -148,20 +188,6 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     const handleContainerClick = () => {
       inputRef.current?.focus();
     };
-
-    // Filter suggestions: not already tagged, matches input, case-insensitive
-    const filteredSuggestions = React.useMemo(() => {
-      if (!inputValue.trim()) return [];
-      const lowerInput = inputValue.toLowerCase();
-      return suggestions
-        .filter(
-          (s) =>
-            !tags.includes(s) &&
-            s.toLowerCase().includes(lowerInput) &&
-            s.trim() !== ""
-        )
-        .slice(0, 6); // limit to 6 suggestions
-    }, [inputValue, suggestions, tags]);
 
     const chipSizeMapping = {
       sm: "sm" as const,
@@ -227,15 +253,21 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         {/* Suggestions dropdown */}
         {isFocused && filteredSuggestions.length > 0 && (
           <div className="absolute left-0 z-10 mt-1 w-full rounded-ele border border-border bg-popover shadow-lg text-sm max-h-48 overflow-auto">
-            {filteredSuggestions.map((sugg) => (
+            {filteredSuggestions.map((sugg, idx) => (
               <button
                 key={sugg}
                 type="button"
-                className="w-full text-left px-3 py-2 hover:bg-accent transition-colors"
-                onMouseDown={(e) => {
+                className={cn(
+                  "w-full text-left px-3 py-2 transition-colors",
+                  idx === highlightedIndex
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-accent"
+                )}
+                onMouseDown={e => {
                   e.preventDefault();
                   addTag(sugg);
                 }}
+                onMouseEnter={() => setHighlightedIndex(idx)}
               >
                 {sugg}
               </button>
