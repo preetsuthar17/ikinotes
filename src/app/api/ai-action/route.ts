@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
           "X-RateLimit-Limit": result.limit.toString(),
           "X-RateLimit-Remaining": result.remaining.toString(),
         },
-      },
+      }
     );
   }
   const body: {
@@ -68,8 +68,13 @@ export async function POST(req: NextRequest) {
     return new Response("Missing or invalid input", { status: 400 });
   }
   let prompt = PROMPTS[action];
-  prompt = prompt.replace("{content}", content);
-  if (action === "ask") prompt = prompt.replace("{question}", question || "");
+  // If action is rewrite and user provided a prompt, use their prompt directly
+  if (action === "rewrite" && question) {
+    prompt = `${question}\n\n${content}`;
+  } else {
+    prompt = prompt.replace("{content}", content);
+    if (action === "ask") prompt = prompt.replace("{question}", question || "");
+  }
 
   const { textStream } = await streamText({
     model: groq("llama-3.1-8b-instant"),

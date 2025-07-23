@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Cascadia_Code } from "next/font/google";
 import "../globals.css";
 import { Suspense } from "react";
 import { Loader } from "@/components/ui/loader";
 
-const cascadiaCode = Cascadia_Code({
-  variable: "--font-cascadia-mono",
+import { Geist } from "next/font/google";
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
 });
 
@@ -27,7 +27,7 @@ export default function RootLayout({
           src="https://assets.onedollarstats.com/stonks.js"
         ></script>
       </head>
-      <body className={` ${cascadiaCode.className} antialiased`}>
+      <body className={`${geist.className} antialiased font-sans`}>
         <Suspense
           fallback={
             <div className="h-screen w-screen flex items-center justify-center">

@@ -1,3 +1,4 @@
+// ...existing code...
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -5,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getNotes, updateNote, Note } from "@/lib/note-storage";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Home, Trash2 } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
@@ -34,12 +36,12 @@ export default function NewNotePage() {
   const [askInput, setAskInput] = useState("");
   const [showAiEdit, setShowAiEdit] = useState(false);
   const [aiEditContent, setAiEditContent] = useState("");
-  const [aiEditAction, setAiEditAction] = useState("rewrite");
   const [aiHeading, setAiHeading] = useState("");
   const [headingLoading, setHeadingLoading] = useState(false);
   const [unsaved, setUnsaved] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
+  const [aiEditPrompt, setAiEditPrompt] = useState("");
 
   function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setContent(e.target.value);
@@ -94,6 +96,42 @@ export default function NewNotePage() {
 
   function handleHome() {
     router.push("/");
+  }
+
+  // Simple line diff function
+  function getDiffLines(oldStr: string, newStr: string) {
+    const oldLines = oldStr.split("\n");
+    const newLines = newStr.split("\n");
+    const diff = [];
+    let i = 0,
+      j = 0;
+    while (i < oldLines.length || j < newLines.length) {
+      if (
+        i < oldLines.length &&
+        j < newLines.length &&
+        oldLines[i] === newLines[j]
+      ) {
+        diff.push({ type: "unchanged", text: oldLines[i] });
+        i++;
+        j++;
+      } else if (
+        j < newLines.length &&
+        (!oldLines[i] || oldLines[i] !== newLines[j])
+      ) {
+        diff.push({ type: "added", text: newLines[j] });
+        j++;
+      } else if (
+        i < oldLines.length &&
+        (!newLines[j] || oldLines[i] !== newLines[j])
+      ) {
+        diff.push({ type: "removed", text: oldLines[i] });
+        i++;
+      } else {
+        i++;
+        j++;
+      }
+    }
+    return diff;
   }
 
   function handleDelete() {
@@ -187,14 +225,6 @@ export default function NewNotePage() {
       ) : (
         <>
           <nav className="flex gap-2 items-center">
-            <ViewTransition name="iki-logo">
-              <Image
-                src="https://68u63cxp9s.ufs.sh/f/Q3JH7qTNtPXuRLGe8euIK9q7ed8fhWNTVmEF0SuPbkLQg1CO"
-                alt="Iki"
-                width={20}
-                height={20}
-              />
-            </ViewTransition>
             <Button variant="ghost" size={"icon"} asChild>
               <Link href={`/`}>
                 <ArrowLeft />
@@ -232,7 +262,7 @@ export default function NewNotePage() {
             className="mb-2"
             suggestions={allTags}
           />
-          <div className="flex flex-col gap-8 flex-1">
+          <div className="flex flex-col gap-3 flex-1">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -242,7 +272,7 @@ export default function NewNotePage() {
             >
               <Input
                 type="text"
-                className="border rounded px-2 py-1 text-sm"
+                className="border rounded px-4 py-1 text-sm"
                 placeholder="Ask a question..."
                 value={askInput}
                 onChange={(e) => setAskInput(e.target.value)}
@@ -286,6 +316,7 @@ export default function NewNotePage() {
                 onClick={() => {
                   setAiEditContent(content);
                   setShowAiEdit(true);
+                  setAiEditPrompt("");
                 }}
                 disabled={aiLoading || !content.trim()}
                 variant="outline"
@@ -302,47 +333,142 @@ export default function NewNotePage() {
               </Button>
             </div>
             {showAiEdit && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    setShowAiEdit(false);
-                    await handleAIAction(
-                      aiEditAction,
-                      undefined,
-                      aiEditContent
-                    );
-                  }}
-                  className="bg-background p-6 rounded shadow-lg flex flex-col gap-4 min-w-[320px]"
-                >
-                  <label className="font-semibold">Edit with AI:</label>
-                  <Textarea
-                    className="border rounded p-2 text-base"
-                    value={aiEditContent}
-                    onChange={(e) => setAiEditContent(e.target.value)}
-                    rows={8}
-                  />
-                  <select
-                    className="border rounded p-2"
-                    value={aiEditAction}
-                    onChange={(e) => setAiEditAction(e.target.value)}
-                  >
-                    <option value="rewrite">Rewrite</option>
-                    <option value="fix">Fix Grammar</option>
-                  </select>
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      type="button"
-                      variant="ghost"
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                <div className="w-full h-full flex flex-col justify-center items-center">
+                  <div className="bg-background rounded-lg shadow-2xl w-full max-w-4xl h-full max-h-[95vh] flex flex-col p-4 sm:p-8 relative">
+                    <button
+                      className="absolute top-4 right-4 text-lg px-3 py-1 rounded bg-muted hover:bg-muted/80"
                       onClick={() => setShowAiEdit(false)}
                     >
-                      Cancel
-                    </Button>
-                    <Button type="submit" variant="outline">
-                      Apply AI Edit
-                    </Button>
+                      ✕
+                    </button>
+                    <div className="flex flex-col gap-4 mb-4 sm:mb-6">
+                      <label className="font-semibold text-xl">
+                        Edit with AI
+                      </label>
+                      <Input
+                        type="text"
+                        className="w-full"
+                        value={aiEditPrompt}
+                        onChange={(e) => setAiEditPrompt(e.target.value)}
+                        placeholder="Enter your prompt for AI..."
+                      />
+                      <Button
+                        variant="outline"
+                        className="self-end"
+                        onClick={async () => {
+                          setAiLoading(true);
+                          setAiError("");
+                          try {
+                            const res = await fetch("/api/ai-action", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                content,
+                                action: "rewrite",
+                                question: aiEditPrompt,
+                              }),
+                            });
+                            if (!res.body) throw new Error("No response body");
+                            const reader = res.body.getReader();
+                            let result = "";
+                            const decoder = new TextDecoder();
+                            while (true) {
+                              const { done, value } = await reader.read();
+                              if (done) break;
+                              result += decoder.decode(value, { stream: true });
+                            }
+                            result += decoder.decode();
+                            setAiEditContent(result);
+                          } catch (e) {
+                            setAiError("Failed to process AI action");
+                          }
+                          setAiLoading(false);
+                        }}
+                        disabled={aiLoading || !aiEditPrompt.trim()}
+                      >
+                        Run AI Edit
+                      </Button>
+                    </div>
+                    <div className="flex flex-col sm:flex-row flex-1 gap-4 sm:gap-8 overflow-hidden h-full">
+                      <div className="flex-1 flex flex-col min-w-0">
+                        <span className="font-semibold mb-2">
+                          Original Note
+                        </span>
+                        <ScrollArea className="border border-border rounded-card p-2 text-base flex-1 bg-muted/30 whitespace-pre-wrap">
+                          {content}
+                        </ScrollArea>
+                      </div>
+                      <div className="flex-1 flex flex-col min-w-0">
+                        <span className="font-semibold mb-2">
+                          AI Edited Note (Diff)
+                        </span>
+                        <ScrollArea className="border border-border rounded-card p-2 text-base flex-1 whitespace-pre-wrap">
+                          {getDiffLines(content, aiEditContent).map(
+                            (line, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  background:
+                                    line.type === "added"
+                                      ? "#e6ffed"
+                                      : line.type === "removed"
+                                      ? "#ffeef0"
+                                      : "transparent",
+                                  color:
+                                    line.type === "added"
+                                      ? "#22863a"
+                                      : line.type === "removed"
+                                      ? "#b31d28"
+                                      : undefined,
+                                }}
+                              >
+                                {line.type === "added"
+                                  ? "+ "
+                                  : line.type === "removed"
+                                  ? "- "
+                                  : "  "}
+                                {line.text}
+                              </div>
+                            )
+                          )}
+                        </ScrollArea>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end mt-6">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setShowAiEdit(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="default"
+                        onClick={() => {
+                          setShowAiEdit(false);
+                          if (note) {
+                            const updated = {
+                              ...note,
+                              content: aiEditContent,
+                              title,
+                              tags,
+                              updatedAt: Date.now(),
+                            };
+                            updateNote(updated);
+                            setUnsaved(false);
+                            setNote(updated);
+                            setContent(aiEditContent);
+                          }
+                        }}
+                        disabled={aiEditContent.trim() === content.trim()}
+                      >
+                        Confirm
+                      </Button>
+                    </div>
                   </div>
-                </form>
+                </div>
               </div>
             )}
             <div className="flex gap-2 mb-2">
@@ -358,7 +484,6 @@ export default function NewNotePage() {
                 </div>
               )}
             </div>
-
             <Textarea
               ref={textareaRef}
               className="w-full resize-none bg-transparent text-base focus:outline-none focus:ring-0 border-none shadow-none p-0 h-auto"

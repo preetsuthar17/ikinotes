@@ -77,14 +77,6 @@ export default function Home() {
     <main className="flex flex-col min-h-screen max-w-2xl mx-auto py-12 px-4 gap-14">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ViewTransition name="iki-logo">
-            <Image
-              src="https://68u63cxp9s.ufs.sh/f/Q3JH7qTNtPXuRLGe8euIK9q7ed8fhWNTVmEF0SuPbkLQg1CO"
-              alt="Iki"
-              width={45}
-              height={45}
-            />
-          </ViewTransition>
           <h1 className="text-3xl font-bold tracking-tight">Iki</h1>
         </div>
         <div className="flex gap-2">
@@ -172,7 +164,7 @@ export default function Home() {
                     ))}
                   </div>
                 ))}
-                <Separator />
+                {untagged.length < 0 && <Separator />}
                 {/* Untagged notes */}
                 {untagged.length > 0 && (
                   <div className="flex flex-col gap-2">

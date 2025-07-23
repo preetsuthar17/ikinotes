@@ -8,7 +8,7 @@ import { Chip } from "@/components/ui/chip";
 import { X } from "lucide-react";
 
 const tagInputVariants = cva(
-  "min-h-9 w-full rounded-ele border border-border bg-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+  "min-h-9 w-full rounded-card border border-border bg-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -228,7 +228,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                     size={chipSizeMapping[size || "default"]}
                     dismissible
                     onDismiss={() => removeTag(tag)}
-                    className="pointer-events-auto rounded-card"
+                    className="pointer-events-auto rounded-ele"
                   >
                     {tag}
                   </Chip>
@@ -263,7 +263,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                     ? "bg-accent text-accent-foreground"
                     : "hover:bg-accent"
                 )}
-                onMouseDown={e => {
+                onMouseDown={(e) => {
                   e.preventDefault();
                   addTag(sugg);
                 }}
