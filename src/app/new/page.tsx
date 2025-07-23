@@ -11,6 +11,9 @@ import { Loader } from "@/components/ui/loader";
 import { Sparkles } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { TagInput } from "@/components/ui/tag-input";
+import Image from "next/image";
+import { unstable_ViewTransition as ViewTransition } from "react";
+import Link from "next/link";
 
 export default function NewNotePage() {
   const router = useRouter();
@@ -184,11 +187,23 @@ export default function NewNotePage() {
       ) : (
         <>
           <nav className="flex gap-2 items-center">
-            <Button variant="ghost" size={"icon"} onClick={handleBack}>
-              <ArrowLeft />
+            <ViewTransition name="iki-logo">
+              <Image
+                src="https://68u63cxp9s.ufs.sh/f/Q3JH7qTNtPXuRLGe8euIK9q7ed8fhWNTVmEF0SuPbkLQg1CO"
+                alt="Iki"
+                width={20}
+                height={20}
+              />
+            </ViewTransition>
+            <Button variant="ghost" size={"icon"} asChild>
+              <Link href={`/`}>
+                <ArrowLeft />
+              </Link>
             </Button>
-            <Button variant="ghost" size={"icon"} onClick={handleHome}>
-              <Home />
+            <Button variant="ghost" size={"icon"} asChild>
+              <Link href={`/`}>
+                <Home />
+              </Link>
             </Button>
             <Button
               variant="outline"

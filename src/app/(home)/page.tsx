@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getNotes, addNote, Note } from "@/lib/note-storage";
 import { useRouter } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
-import { Github, NotebookPen } from "lucide-react";
+import { Github, NotebookPen, View } from "lucide-react";
 import Link from "next/link";
 import {
   Select,
@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import Image from "next/image";
+import { unstable_ViewTransition as ViewTransition } from "react";
 
 export default function Home() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -74,7 +76,17 @@ export default function Home() {
   return (
     <main className="flex flex-col min-h-screen max-w-2xl mx-auto py-12 px-4 gap-14">
       <header className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Iki</h1>
+        <div className="flex items-center gap-2">
+          <ViewTransition name="iki-logo">
+            <Image
+              src="https://68u63cxp9s.ufs.sh/f/Q3JH7qTNtPXuRLGe8euIK9q7ed8fhWNTVmEF0SuPbkLQg1CO"
+              alt="Iki"
+              width={45}
+              height={45}
+            />
+          </ViewTransition>
+          <h1 className="text-3xl font-bold tracking-tight">Iki</h1>
+        </div>
         <div className="flex gap-2">
           <Button size={"icon"} variant={"secondary"} asChild>
             <Link href={"http://github.com/preetsuthar17/iki"} target="_blank">
@@ -138,10 +150,10 @@ export default function Home() {
                       {tag}
                     </div>
                     {notes.map((note) => (
-                      <div
+                      <Link
+                        href={`/new?id=${note.id}`}
                         key={note.id}
                         className="text-[#1d4ed8] flex items-center justify-between w-full flex-wrap max-sm:flex-col max-sm:items-start gap-4 cursor-pointer"
-                        onClick={() => router.push(`/new?id=${note.id}`)}
                       >
                         <p
                           className="note-link text-base text-left flex-1 flex items-center gap-1 transition-opacity group-hover:opacity-40 hover:!opacity-100 "
@@ -156,7 +168,7 @@ export default function Home() {
                                 .slice(0, 10)
                             : ""}
                         </span>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 ))}
@@ -165,7 +177,8 @@ export default function Home() {
                 {untagged.length > 0 && (
                   <div className="flex flex-col gap-2">
                     {untagged.map((note) => (
-                      <div
+                      <Link
+                        href={`/new?id=${note.id}`}
                         key={note.id}
                         className="text-[#1d4ed8] flex items-center justify-between w-full flex-wrap max-sm:flex-col max-sm:items-start gap-4 cursor-pointer"
                         onClick={() => router.push(`/new?id=${note.id}`)}
@@ -183,7 +196,7 @@ export default function Home() {
                                 .slice(0, 10)
                             : ""}
                         </span>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}
