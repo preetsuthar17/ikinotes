@@ -360,13 +360,16 @@ export default function NewNotePage() {
                           setAiLoading(true);
                           setAiError("");
                           try {
+                            const prompt =
+                              aiEditPrompt.trim() +
+                              "\nDo not include any meta text like 'Here's a summary:', 'Here's a simplified version:', or similar. Only output the result.";
                             const res = await fetch("/api/ai-action", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({
                                 content,
                                 action: "rewrite",
-                                question: aiEditPrompt,
+                                question: prompt,
                               }),
                             });
                             if (!res.body) throw new Error("No response body");
