@@ -7,6 +7,15 @@ import { Button } from "@/components/ui/button";
 import { getNotes, updateNote, Note } from "@/lib/note-storage";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalTitle,
+  ModalDescription,
+  ModalClose,
+} from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Home, Trash2 } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
@@ -332,149 +341,136 @@ export default function NewNotePage() {
                 Generate Heading
               </Button>
             </div>
-            {showAiEdit && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-                <div className="w-full h-full flex flex-col justify-center items-center">
-                  <div className="bg-background rounded-lg shadow-2xl w-full max-w-4xl h-full max-h-[95vh] flex flex-col p-4 sm:p-8 relative">
-                    <button
-                      className="absolute top-4 right-4 text-lg px-3 py-1 rounded bg-muted hover:bg-muted/80"
-                      onClick={() => setShowAiEdit(false)}
-                    >
-                      ✕
-                    </button>
-                    <div className="flex flex-col gap-4 mb-4 sm:mb-6">
-                      <label className="font-semibold text-xl">
-                        Edit with AI
-                      </label>
-                      <Input
-                        type="text"
-                        className="w-full"
-                        value={aiEditPrompt}
-                        onChange={(e) => setAiEditPrompt(e.target.value)}
-                        placeholder="Enter your prompt for AI..."
-                      />
-                      <Button
-                        variant="outline"
-                        className="self-end"
-                        onClick={async () => {
-                          setAiLoading(true);
-                          setAiError("");
-                          try {
-                            const prompt =
-                              aiEditPrompt.trim() +
-                              "\nDo not include any meta text like 'Here's a summary:', 'Here's a simplified version:', or similar. Only output the result.";
-                            const res = await fetch("/api/ai-action", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                content,
-                                action: "rewrite",
-                                question: prompt,
-                              }),
-                            });
-                            if (!res.body) throw new Error("No response body");
-                            const reader = res.body.getReader();
-                            let result = "";
-                            const decoder = new TextDecoder();
-                            while (true) {
-                              const { done, value } = await reader.read();
-                              if (done) break;
-                              result += decoder.decode(value, { stream: true });
-                            }
-                            result += decoder.decode();
-                            setAiEditContent(result);
-                          } catch (e) {
-                            setAiError("Failed to process AI action");
-                          }
-                          setAiLoading(false);
-                        }}
-                        disabled={aiLoading || !aiEditPrompt.trim()}
-                      >
-                        Run AI Edit
-                      </Button>
-                    </div>
-                    <div className="flex flex-col sm:flex-row flex-1 gap-4 sm:gap-8 overflow-hidden h-full">
-                      <div className="flex-1 flex flex-col min-w-0">
-                        <span className="font-semibold mb-2">
-                          Original Note
-                        </span>
-                        <ScrollArea className="border border-border rounded-card p-2 text-base flex-1 bg-muted/30 whitespace-pre-wrap">
-                          {content}
-                        </ScrollArea>
-                      </div>
-                      <div className="flex-1 flex flex-col min-w-0">
-                        <span className="font-semibold mb-2">
-                          AI Edited Note (Diff)
-                        </span>
-                        <ScrollArea className="border border-border rounded-card p-2 text-base flex-1 whitespace-pre-wrap">
-                          {getDiffLines(content, aiEditContent).map(
-                            (line, idx) => (
-                              <div
-                                key={idx}
-                                style={{
-                                  background:
-                                    line.type === "added"
-                                      ? "#e6ffed"
-                                      : line.type === "removed"
-                                      ? "#ffeef0"
-                                      : "transparent",
-                                  color:
-                                    line.type === "added"
-                                      ? "#22863a"
-                                      : line.type === "removed"
-                                      ? "#b31d28"
-                                      : undefined,
-                                }}
-                              >
-                                {line.type === "added"
-                                  ? "+ "
-                                  : line.type === "removed"
-                                  ? "- "
-                                  : "  "}
-                                {line.text}
-                              </div>
-                            )
-                          )}
-                        </ScrollArea>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 justify-end mt-6">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => setShowAiEdit(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="default"
-                        onClick={() => {
-                          setShowAiEdit(false);
-                          if (note) {
-                            const updated = {
-                              ...note,
-                              content: aiEditContent,
-                              title,
-                              tags,
-                              updatedAt: Date.now(),
-                            };
-                            updateNote(updated);
-                            setUnsaved(false);
-                            setNote(updated);
-                            setContent(aiEditContent);
-                          }
-                        }}
-                        disabled={aiEditContent.trim() === content.trim()}
-                      >
-                        Confirm
-                      </Button>
-                    </div>
+            <Modal open={showAiEdit} onOpenChange={setShowAiEdit}>
+              <ModalContent className="w-full h-full max-h-[95vh] flex flex-col p-4 sm:p-8 gap-4 max-w-[95%]">
+                <ModalHeader>
+                  <ModalTitle>Edit with AI</ModalTitle>
+                </ModalHeader>
+                <div className="flex flex-col sm:flex-row flex-1 gap-4 sm:gap-8 overflow-hidden h-full">
+                  <div className="flex-1 flex flex-col min-w-0">
+                    <span className="font-semibold mb-2">Original Note</span>
+                    <ScrollArea className="border border-border rounded-card p-2 text-base flex-1 bg-muted/30 whitespace-pre-wrap">
+                      {content}
+                    </ScrollArea>
                   </div>
+                  <div className="flex-1 flex flex-col min-w-0">
+                    <span className="font-semibold mb-2">
+                      AI Edited Note (Diff)
+                    </span>
+                    <ScrollArea className="border border-border rounded-card p-2 text-base flex-1 whitespace-pre-wrap">
+                      {getDiffLines(content, aiEditContent).map((line, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            background:
+                              line.type === "added"
+                                ? "#e6ffed"
+                                : line.type === "removed"
+                                ? "#ffeef0"
+                                : "transparent",
+                            color:
+                              line.type === "added"
+                                ? "#22863a"
+                                : line.type === "removed"
+                                ? "#b31d28"
+                                : undefined,
+                          }}
+                        >
+                          {line.type === "added"
+                            ? "+ "
+                            : line.type === "removed"
+                            ? "- "
+                            : "  "}
+                          {line.text}
+                        </div>
+                      ))}
+                    </ScrollArea>
+                  </div>
+                </div>{" "}
+                <div className="flex flex-col gap-4">
+                  <Input
+                    type="text"
+                    size={"lg"}
+                    className="w-full"
+                    value={aiEditPrompt}
+                    onChange={(e) => setAiEditPrompt(e.target.value)}
+                    placeholder="Enter your prompt for AI..."
+                  />
+                  <Button
+                    variant="outline"
+                    className="self-end"
+                    onClick={async () => {
+                      setAiLoading(true);
+                      setAiError("");
+                      try {
+                        const prompt =
+                          aiEditPrompt.trim() +
+                          "\nDo not include any meta text like 'Here's a summary:', 'Here's a simplified version:', or similar. Only output the result.";
+                        const res = await fetch("/api/ai-action", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            content,
+                            action: "rewrite",
+                            question: prompt,
+                          }),
+                        });
+                        if (!res.body) throw new Error("No response body");
+                        const reader = res.body.getReader();
+                        let result = "";
+                        const decoder = new TextDecoder();
+                        while (true) {
+                          const { done, value } = await reader.read();
+                          if (done) break;
+                          result += decoder.decode(value, { stream: true });
+                        }
+                        result += decoder.decode();
+                        setAiEditContent(result);
+                      } catch (e) {
+                        setAiError("Failed to process AI action");
+                      }
+                      setAiLoading(false);
+                    }}
+                    disabled={aiLoading || !aiEditPrompt.trim()}
+                  >
+                    Run AI Edit
+                  </Button>
                 </div>
-              </div>
-            )}
-            <div className="flex gap-2 mb-2">
+                <ModalFooter className="justify-end mt-6">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setShowAiEdit(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={() => {
+                      setShowAiEdit(false);
+                      if (note) {
+                        const updated = {
+                          ...note,
+                          content: aiEditContent,
+                          title,
+                          tags,
+                          updatedAt: Date.now(),
+                        };
+                        updateNote(updated);
+                        setUnsaved(false);
+                        setNote(updated);
+                        setContent(aiEditContent);
+                      }
+                    }}
+                    disabled={aiEditContent.trim() === content.trim()}
+                  >
+                    Confirm
+                  </Button>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
+            <div className="flex gap-2">
               {(aiAction === "ask" || aiAction === "summarize") && aiResult && (
                 <div className="mb-2 p-3 rounded bg-muted text-base">
                   <span className="font-semibold capitalize">{aiAction}:</span>{" "}
