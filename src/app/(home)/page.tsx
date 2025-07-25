@@ -145,11 +145,11 @@ export default function Home() {
                       <Link
                         href={`/new?id=${note.id}`}
                         key={note.id}
-                        className="text-[#1d4ed8] flex items-center justify-between w-full flex-wrap max-sm:flex-col max-sm:items-start gap-4 cursor-pointer"
+                        className="text-[#1d4ed8] flex items-center justify-between w-full flex-wrap max-sm:flex-col max-sm:items-start gap-4 cursor-pointer wrap-break-word"
                       >
                         <p
                           className="note-link text-base text-left flex-1 flex items-center gap-1 transition-opacity group-hover:opacity-40 hover:!opacity-100 "
-                          style={{ wordBreak: "break-all" }}
+                          style={{ wordBreak: "break-word" }}
                         >
                           {note.title || "Untitled Note"}
                         </p>
