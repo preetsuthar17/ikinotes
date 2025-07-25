@@ -1,4 +1,3 @@
-// ...existing code...
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -59,6 +58,7 @@ export default function NewNotePage() {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height =
         textareaRef.current.scrollHeight + "px";
+      // Removed scrollTop restore to prevent auto-scroll to end
     }
   }
 
@@ -96,6 +96,7 @@ export default function NewNotePage() {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height =
         textareaRef.current.scrollHeight + "px";
+      // Removed scrollTop restore to prevent auto-scroll to end
     }
   }, [content]);
 
@@ -226,14 +227,17 @@ export default function NewNotePage() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen max-w-2xl mx-auto py-12 px-4 gap-14 mb-12">
+    <main
+      className="flex flex-col max-w-2xl mx-auto px-4 gap-6 py-4"
+      style={{ height: "100vh", minHeight: "100vh" }}
+    >
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <Loader />
         </div>
       ) : (
         <>
-          <nav className="flex gap-2 items-center">
+          <nav className="flex gap-2 items-center md:absolute right-12">
             <Button variant="ghost" size={"icon"} asChild>
               <Link href={`/`}>
                 <ArrowLeft />
@@ -245,7 +249,7 @@ export default function NewNotePage() {
               </Link>
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size={"icon"}
               onClick={handleDelete}
               className="ml-auto"
@@ -271,7 +275,10 @@ export default function NewNotePage() {
             className="mb-2"
             suggestions={allTags}
           />
-          <div className="flex flex-col gap-3 flex-1">
+          <div
+            className="flex flex-col gap-3 flex-1"
+            style={{ height: "calc(100vh - 220px)" }}
+          >
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -483,18 +490,34 @@ export default function NewNotePage() {
                 </div>
               )}
             </div>
-            <Textarea
-              ref={textareaRef}
-              className="w-full resize-none bg-transparent text-base focus:outline-none focus:ring-0 border-none shadow-none p-0 h-auto"
-              value={content}
-              onChange={handleContentChange}
-              placeholder="Write your note..."
-              style={{ boxShadow: "none", border: "none", overflow: "hidden" }}
-            />
+            <ScrollArea className="flex-1 w-full">
+              <Textarea
+                ref={textareaRef}
+                className="w-full min-h-[80px] bg-transparent text-base focus:outline-none border-none shadow-none p-0 h-auto rounded-ele px-3 py-2 flex-1"
+                style={{
+                  boxShadow: "none",
+                  border: "none",
+                  outline: "none",
+                  overflowY: "auto",
+                  height: "100%",
+                  maxHeight: "100%",
+                  resize: "none",
+                  background: "transparent",
+                }}
+                value={content}
+                onChange={(e) => {
+                  setContent(e.target.value);
+                  setUnsaved(true);
+                }}
+                onBlur={(e) => {
+                  setContent(e.target.value);
+                }}
+              />
+            </ScrollArea>
             {unsaved && (
               <Alert
                 variant={"info"}
-                className="text-center rounded-0 fixed bottom-3 right-1/2 translate-x-1/2 max-w-[95%] w-fit"
+                className="text-center rounded-0 fixed bottom-3 right-3 max-w-[95%] w-fit"
               >
                 You have unsaved changes.
               </Alert>

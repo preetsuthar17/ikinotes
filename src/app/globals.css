@@ -38,8 +38,8 @@ body {
 :root {
   --font-sans: var(--font-geist);
 
-  --radius: 0.7rem;
---card-radius: 1rem;
+  --radius: 0.4rem;
+  --card-radius: 1rem;
   --hu-background: 0, 0%, 100%;
   --hu-foreground: 0, 0%, 5%;
   --hu-card: 0, 0%, 98%;
