@@ -493,7 +493,7 @@ export default function NewNotePage() {
             <ScrollArea className="flex-1 w-full">
               <Textarea
                 ref={textareaRef}
-                className="w-full min-h-[80px] bg-transparent text-base focus:outline-none border-none shadow-none p-0 h-auto rounded-ele px-3 py-2 flex-1"
+                className="w-full min-h-[80px] bg-transparent text-base focus:outline-none border-none shadow-none p-0 h-auto rounded-ele px-0 py-2 flex-1"
                 style={{
                   boxShadow: "none",
                   border: "none",
