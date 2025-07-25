@@ -252,7 +252,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         </div>
         {/* Suggestions dropdown */}
         {isFocused && filteredSuggestions.length > 0 && (
-          <div className="absolute left-0 z-10 mt-1 w-full rounded-ele border border-border bg-popover shadow-lg text-sm max-h-48 overflow-auto">
+          <div className="absolute left-0 z-10 mt-1 w-full rounded-ele border border-border bg-popover shadow-lg text-sm max-h-48 overflow-auto bg-background">
             {filteredSuggestions.map((sugg, idx) => (
               <button
                 key={sugg}
