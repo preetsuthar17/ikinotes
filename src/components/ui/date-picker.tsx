@@ -1,34 +1,34 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Calendar } from "@/components/ui/calendar";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
-import { CalendarIcon, ChevronDown } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { Button } from "@/components/ui/button";
-import ReactDOM from "react-dom";
+import { cva, type VariantProps } from 'class-variance-authority';
+import { CalendarIcon, ChevronDown } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import * as React from 'react';
+import ReactDOM from 'react-dom';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const datePickerVariants = cva(
-  "inline-flex h-9 w-full items-center justify-between rounded-ele border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 border border-border bg-input",
+  'inline-flex h-9 w-full items-center justify-between rounded-ele border border border-border border-border bg-background bg-input px-3 py-2 font-medium text-foreground text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: "  shadow-sm/2",
-        outline: "border-2  shadow-sm/2",
-        ghost: "border-transparent hover:border-border",
+        default: 'shadow-sm/2',
+        outline: 'border-2 shadow-sm/2',
+        ghost: 'border-transparent hover:border-border',
       },
       size: {
-        sm: "h-7 sm:h-8 px-2 text-xs",
-        default: "h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm",
-        lg: "h-12 sm:h-10 px-3 sm:px-4 text-sm",
+        sm: 'h-7 px-2 text-xs sm:h-8',
+        default: 'h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm',
+        lg: 'h-12 px-3 text-sm sm:h-10 sm:px-4',
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: 'default',
+      size: 'default',
     },
-  },
+  }
 );
 
 interface DatePickerProps extends VariantProps<typeof datePickerVariants> {
@@ -48,21 +48,21 @@ interface DatePickerProps extends VariantProps<typeof datePickerVariants> {
 export function DatePicker({
   value,
   onChange,
-  placeholder = "Pick a date",
+  placeholder = 'Pick a date',
   className,
   disabled = false,
   showIcon = true,
   minDate,
   maxDate,
   disabledDates,
-  locale = "en-US",
+  locale = 'en-US',
   formatDate,
   variant,
   size,
   ...props
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [focusedDate, setFocusedDate] = React.useState(value || new Date());
+  const [_focusedDate, _setFocusedDate] = React.useState(value || new Date());
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [portalContainer, setPortalContainer] = React.useState<
     Element | DocumentFragment | null
@@ -70,18 +70,18 @@ export function DatePicker({
 
   React.useEffect(() => {
     // Set portal container on client side only
-    if (typeof document !== "undefined") {
+    if (typeof document !== 'undefined') {
       setPortalContainer(
-        document.getElementById("portal-root") || document.body,
+        document.getElementById('portal-root') || document.body
       );
     }
   }, []);
 
   const defaultFormatDate = (date: Date) => {
     return date.toLocaleDateString(locale, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     });
   };
 
@@ -97,18 +97,18 @@ export function DatePicker({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleToggleOpen();
-    } else if (event.key === "Escape") {
+    } else if (event.key === 'Escape') {
       setIsOpen(false);
     }
   };
 
   React.useEffect(() => {
-    if (isOpen && typeof document !== "undefined") {
+    if (isOpen && typeof document !== 'undefined') {
       const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
 
       return () => {
         document.body.style.overflow = originalOverflow;
@@ -118,38 +118,39 @@ export function DatePicker({
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (typeof document === "undefined") return;
+      if (typeof document === 'undefined') {
+        return;
+      }
 
       const target = event.target as Node;
-      const isClickInsideContainer =
-        containerRef.current && containerRef.current.contains(target);
+      const isClickInsideContainer = containerRef.current?.contains(target);
 
       // Check if click is inside any calendar popup using the data attribute
       const calendarElement = document.querySelector(
-        '[data-datepicker-calendar="true"]',
+        '[data-datepicker-calendar="true"]'
       );
       const isClickInsideCalendar = calendarElement?.contains(target);
 
-      if (!isClickInsideContainer && !isClickInsideCalendar) {
+      if (!(isClickInsideContainer || isClickInsideCalendar)) {
         setIsOpen(false);
       }
     };
 
-    if (isOpen && typeof document !== "undefined") {
-      document.addEventListener("mousedown", handleClickOutside);
+    if (isOpen && typeof document !== 'undefined') {
+      document.addEventListener('mousedown', handleClickOutside);
       return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isOpen]);
 
   React.useEffect(() => {
-    if (typeof document !== "undefined") {
-      const portalRoot = document.getElementById("portal-root");
+    if (typeof document !== 'undefined') {
+      const portalRoot = document.getElementById('portal-root');
       if (!portalRoot) {
-        const newPortalRoot = document.createElement("div");
-        newPortalRoot.id = "portal-root";
-        newPortalRoot.style.position = "relative";
-        newPortalRoot.style.zIndex = "9999";
+        const newPortalRoot = document.createElement('div');
+        newPortalRoot.id = 'portal-root';
+        newPortalRoot.style.position = 'relative';
+        newPortalRoot.style.zIndex = '9999';
         document.body.appendChild(newPortalRoot);
       }
     }
@@ -176,27 +177,27 @@ export function DatePicker({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, y: -10, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -10, scale: 0.95 }}
-          transition={{ duration: 0.2 }}
           className="z-[9999] rounded-ele border border-border bg-background shadow-xl"
           data-datepicker-calendar="true"
+          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+          initial={{ opacity: 0, y: -10, scale: 0.95 }}
           style={{
-            position: "fixed",
+            position: 'fixed',
             top: calendarPosition.top,
             left: calendarPosition.left,
             width: calendarPosition.width,
           }}
+          transition={{ duration: 0.2 }}
         >
           <Calendar
-            selected={value}
-            onSelect={handleSelect}
-            minDate={minDate}
-            maxDate={maxDate}
+            alwaysOnTop={true}
             disabled={disabledDates}
             locale={locale}
-            alwaysOnTop={true}
+            maxDate={maxDate}
+            minDate={minDate}
+            onSelect={handleSelect}
+            selected={value}
           />
         </motion.div>
       )}
@@ -206,25 +207,25 @@ export function DatePicker({
   return (
     <div className="relative" ref={containerRef} {...props}>
       <Button
-        type="button"
-        onClick={handleToggleOpen}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-        className={cn(datePickerVariants({ variant, size }), className)}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-label="Choose date"
+        className={cn(datePickerVariants({ variant, size }), className)}
+        disabled={disabled}
+        onClick={handleToggleOpen}
+        onKeyDown={handleKeyDown}
+        type="button"
       >
         <span className="flex items-center gap-2">
           {showIcon && <CalendarIcon className="h-4 w-4 opacity-50" />}
-          <span className={cn(!value && "text-muted-foreground")}>
+          <span className={cn(!value && 'text-muted-foreground')}>
             {value ? formatDateFn(value) : placeholder}
           </span>
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 opacity-50 transition-transform duration-200",
-            isOpen && "rotate-180",
+            'h-4 w-4 opacity-50 transition-transform duration-200',
+            isOpen && 'rotate-180'
           )}
         />
       </Button>
@@ -237,7 +238,7 @@ export function DatePicker({
 
 // Date Range Picker Component
 interface DateRangePickerProps
-  extends Omit<DatePickerProps, "value" | "onChange"> {
+  extends Omit<DatePickerProps, 'value' | 'onChange'> {
   value?: { from: Date; to?: Date };
   onChange?: (range: { from: Date; to?: Date } | undefined) => void;
   placeholder?: string;
@@ -246,14 +247,14 @@ interface DateRangePickerProps
 export function DateRangePicker({
   value,
   onChange,
-  placeholder = "Pick a date range",
+  placeholder = 'Pick a date range',
   className,
   disabled = false,
   showIcon = true,
   minDate,
   maxDate,
   disabledDates,
-  locale = "en-US",
+  locale = 'en-US',
   formatDate,
   variant,
   size,
@@ -269,9 +270,9 @@ export function DateRangePicker({
 
   const defaultFormatDate = (date: Date) => {
     return date.toLocaleDateString(locale, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     });
   };
 
@@ -285,8 +286,12 @@ export function DateRangePicker({
   };
 
   const formatRange = (range: { from: Date; to?: Date }) => {
-    if (!range.from) return "";
-    if (!range.to) return formatDateFn(range.from);
+    if (!range.from) {
+      return '';
+    }
+    if (!range.to) {
+      return formatDateFn(range.from);
+    }
     return `${formatDateFn(range.from)} - ${formatDateFn(range.to)}`;
   };
 
@@ -295,21 +300,21 @@ export function DateRangePicker({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleToggleOpen();
-    } else if (event.key === "Escape") {
+    } else if (event.key === 'Escape') {
       setIsOpen(false);
     }
   };
 
   // Body scroll lock effect
   React.useEffect(() => {
-    if (isOpen && typeof document !== "undefined") {
+    if (isOpen && typeof document !== 'undefined') {
       // Store original overflow
       const originalOverflow = document.body.style.overflow;
       // Disable scrolling
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
 
       return () => {
         // Restore original overflow when component unmounts or closes
@@ -321,38 +326,39 @@ export function DateRangePicker({
   // Close dropdown when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (typeof document === "undefined") return;
+      if (typeof document === 'undefined') {
+        return;
+      }
 
       const target = event.target as Node;
-      const isClickInsideContainer =
-        containerRef.current && containerRef.current.contains(target);
+      const isClickInsideContainer = containerRef.current?.contains(target);
 
       // Check if click is inside any calendar popup using the data attribute
       const calendarElement = document.querySelector(
-        '[data-datepicker-calendar="true"]',
+        '[data-datepicker-calendar="true"]'
       );
       const isClickInsideCalendar = calendarElement?.contains(target);
 
-      if (!isClickInsideContainer && !isClickInsideCalendar) {
+      if (!(isClickInsideContainer || isClickInsideCalendar)) {
         setIsOpen(false);
       }
     };
 
-    if (isOpen && typeof document !== "undefined") {
-      document.addEventListener("mousedown", handleClickOutside);
+    if (isOpen && typeof document !== 'undefined') {
+      document.addEventListener('mousedown', handleClickOutside);
       return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isOpen]);
 
   React.useEffect(() => {
-    if (typeof document !== "undefined") {
-      const portalRoot = document.getElementById("portal-root");
+    if (typeof document !== 'undefined') {
+      const portalRoot = document.getElementById('portal-root');
       if (!portalRoot) {
-        const newPortalRoot = document.createElement("div");
-        newPortalRoot.id = "portal-root";
-        newPortalRoot.style.position = "relative";
-        newPortalRoot.style.zIndex = "9999";
+        const newPortalRoot = document.createElement('div');
+        newPortalRoot.id = 'portal-root';
+        newPortalRoot.style.position = 'relative';
+        newPortalRoot.style.zIndex = '9999';
         document.body.appendChild(newPortalRoot);
       }
     }
@@ -372,61 +378,61 @@ export function DateRangePicker({
   return (
     <div className="relative" ref={containerRef} {...props}>
       <button
-        type="button"
-        onClick={handleToggleOpen}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-        className={cn(datePickerVariants({ variant, size }), className)}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-label="Choose date range"
+        className={cn(datePickerVariants({ variant, size }), className)}
+        disabled={disabled}
+        onClick={handleToggleOpen}
+        onKeyDown={handleKeyDown}
+        type="button"
       >
         <span className="flex items-center gap-2">
           {showIcon && <CalendarIcon className="h-4 w-4 opacity-50" />}
-          <span className={cn(!value && "text-muted-foreground")}>
+          <span className={cn(!value && 'text-muted-foreground')}>
             {value ? formatRange(value) : placeholder}
           </span>
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 opacity-50 transition-transform duration-200",
-            isOpen && "rotate-180",
+            'h-4 w-4 opacity-50 transition-transform duration-200',
+            isOpen && 'rotate-180'
           )}
         />
       </button>
 
-      {typeof document !== "undefined" &&
+      {typeof document !== 'undefined' &&
         ReactDOM.createPortal(
           <AnimatePresence>
             {isOpen && (
               <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
                 className="z-[9999] rounded-ele border border-border bg-background shadow-xl"
                 data-datepicker-calendar="true"
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
                 style={{
-                  position: "fixed",
+                  position: 'fixed',
                   top: calendarPosition.top,
                   left: calendarPosition.left,
                   width: calendarPosition.width,
                 }}
+                transition={{ duration: 0.2 }}
               >
                 <Calendar
-                  mode="range"
-                  selectedRange={value}
-                  onSelectRange={handleSelect}
-                  minDate={minDate}
-                  maxDate={maxDate}
+                  alwaysOnTop={true}
                   disabled={disabledDates}
                   locale={locale}
-                  alwaysOnTop={true}
+                  maxDate={maxDate}
+                  minDate={minDate}
+                  mode="range"
+                  onSelectRange={handleSelect}
+                  selectedRange={value}
                 />
               </motion.div>
             )}
           </AnimatePresence>,
-          document.getElementById("portal-root") || document.body,
+          document.getElementById('portal-root') || document.body
         )}
     </div>
   );

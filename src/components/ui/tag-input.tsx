@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-import { motion, AnimatePresence } from "motion/react";
-import { cn } from "@/lib/utils";
-import { Chip } from "@/components/ui/chip";
-import { X } from "lucide-react";
+import { cva, type VariantProps } from 'class-variance-authority';
+import { X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import * as React from 'react';
+import { Chip } from '@/components/ui/chip';
+import { cn } from '@/lib/utils';
 
 const tagInputVariants = cva(
-  "min-h-9 w-full rounded-ele border border-border bg-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+  'min-h-9 w-full rounded-ele border border-border bg-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: "border-border",
-        destructive: "border-destructive focus-within:ring-destructive",
+        default: 'border-border',
+        destructive: 'border-destructive focus-within:ring-destructive',
       },
       size: {
-        sm: "min-h-8 px-2 py-1 text-xs",
-        default: "min-h-9 px-3 py-2 text-sm",
-        lg: "min-h-10 px-4 py-2",
-        xl: "min-h-12 px-6 py-3 text-base",
+        sm: 'min-h-8 px-2 py-1 text-xs',
+        default: 'min-h-9 px-3 py-2 text-sm',
+        lg: 'min-h-10 px-4 py-2',
+        xl: 'min-h-12 px-6 py-3 text-base',
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: 'default',
+      size: 'default',
     },
   }
 );
@@ -32,15 +32,15 @@ const tagInputVariants = cva(
 export interface TagInputProps
   extends Omit<
       React.InputHTMLAttributes<HTMLInputElement>,
-      "size" | "value" | "onChange"
+      'size' | 'value' | 'onChange'
     >,
     VariantProps<typeof tagInputVariants> {
   tags: string[];
   onTagsChange: (tags: string[]) => void;
   maxTags?: number;
   placeholder?: string;
-  tagVariant?: "default" | "secondary" | "destructive" | "outline" | "ghost";
-  tagSize?: "sm" | "default" | "lg";
+  tagVariant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost';
+  tagSize?: 'sm' | 'default' | 'lg';
   allowDuplicates?: boolean;
   onTagAdd?: (tag: string) => void;
   onTagRemove?: (tag: string) => void;
@@ -61,13 +61,13 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
       tags,
       onTagsChange,
       maxTags,
-      placeholder = "Type and press Enter to add tags...",
-      tagVariant = "secondary",
-      tagSize = "sm",
+      placeholder = 'Type and press Enter to add tags...',
+      tagVariant = 'secondary',
+      tagSize = 'sm',
       allowDuplicates = false,
       onTagAdd,
       onTagRemove,
-      separator = ",",
+      separator = ',',
       clearAllButton = false,
       onClearAll,
       disabled,
@@ -75,9 +75,9 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
       suggestions = [],
       ...props
     },
-    ref
+    _ref
   ) => {
-    const [inputValue, setInputValue] = React.useState("");
+    const [inputValue, setInputValue] = React.useState('');
     const inputRef = React.useRef<HTMLInputElement>(null);
     const [isFocused, setIsFocused] = React.useState(false);
     const [highlightedIndex, setHighlightedIndex] = React.useState<number>(-1);
@@ -85,15 +85,21 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     const addTag = React.useCallback(
       (tag: string) => {
         const trimmedTag = tag.trim();
-        if (!trimmedTag) return;
+        if (!trimmedTag) {
+          return;
+        }
 
-        if (!allowDuplicates && tags.includes(trimmedTag)) return;
-        if (maxTags && tags.length >= maxTags) return;
+        if (!allowDuplicates && tags.includes(trimmedTag)) {
+          return;
+        }
+        if (maxTags && tags.length >= maxTags) {
+          return;
+        }
 
         const newTags = [...tags, trimmedTag];
         onTagsChange(newTags);
         onTagAdd?.(trimmedTag);
-        setInputValue("");
+        setInputValue('');
       },
       [tags, onTagsChange, onTagAdd, allowDuplicates, maxTags]
     );
@@ -109,14 +115,16 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
 
     // Filter suggestions: not already tagged, matches input, case-insensitive
     const filteredSuggestions = React.useMemo(() => {
-      if (!inputValue.trim()) return [];
+      if (!inputValue.trim()) {
+        return [];
+      }
       const lowerInput = inputValue.toLowerCase();
       return suggestions
         .filter(
           (s) =>
             !tags.includes(s) &&
             s.toLowerCase().includes(lowerInput) &&
-            s.trim() !== ""
+            s.trim() !== ''
         )
         .slice(0, 6); // limit to 6 suggestions
     }, [inputValue, suggestions, tags]);
@@ -124,7 +132,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     // Reset highlight when suggestions/input changes
     React.useEffect(() => {
       setHighlightedIndex(filteredSuggestions.length > 0 ? 0 : -1);
-    }, [filteredSuggestions.length, isFocused]);
+    }, [filteredSuggestions.length]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
@@ -133,13 +141,13 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         const parts = value.split(separator);
         if (parts.length > 1) {
           parts.slice(0, -1).forEach((part) => addTag(part));
-          setInputValue(parts[parts.length - 1]);
+          setInputValue(parts.at(-1));
           return;
         }
-      } else if (typeof separator === "string" && value.includes(separator)) {
+      } else if (typeof separator === 'string' && value.includes(separator)) {
         const parts = value.split(separator);
         parts.slice(0, -1).forEach((part) => addTag(part));
-        setInputValue(parts[parts.length - 1]);
+        setInputValue(parts.at(-1));
         return;
       }
 
@@ -149,40 +157,42 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       // Keyboard navigation for suggestions
       if (isFocused && filteredSuggestions.length > 0) {
-        if (e.key === "ArrowDown") {
+        if (e.key === 'ArrowDown') {
           e.preventDefault();
           setHighlightedIndex((prev) =>
             prev < filteredSuggestions.length - 1 ? prev + 1 : 0
           );
           return;
-        } else if (e.key === "ArrowUp") {
+        }
+        if (e.key === 'ArrowUp') {
           e.preventDefault();
           setHighlightedIndex((prev) =>
             prev > 0 ? prev - 1 : filteredSuggestions.length - 1
           );
           return;
-        } else if (e.key === "Enter" && highlightedIndex >= 0) {
+        }
+        if (e.key === 'Enter' && highlightedIndex >= 0) {
           e.preventDefault();
           addTag(filteredSuggestions[highlightedIndex]);
           return;
         }
       }
-      if (e.key === "Tab" || e.key === "Enter") {
+      if (e.key === 'Tab' || e.key === 'Enter') {
         e.preventDefault();
         addTag(inputValue);
       } else if (
-        e.key === "Backspace" &&
-        inputValue === "" &&
+        e.key === 'Backspace' &&
+        inputValue === '' &&
         tags.length > 0
       ) {
-        removeTag(tags[tags.length - 1]);
+        removeTag(tags.at(-1));
       }
     };
 
     const handleClearAll = () => {
       onTagsChange([]);
       onClearAll?.();
-      setInputValue("");
+      setInputValue('');
     };
 
     const handleContainerClick = () => {
@@ -190,10 +200,10 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     };
 
     const chipSizeMapping = {
-      sm: "sm" as const,
-      default: "sm" as const,
-      lg: "default" as const,
-      xl: "default" as const,
+      sm: 'sm' as const,
+      default: 'sm' as const,
+      lg: 'default' as const,
+      xl: 'default' as const,
     };
 
     return (
@@ -201,10 +211,10 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         <div
           className={cn(
             tagInputVariants({
-              variant: error ? "destructive" : variant,
+              variant: error ? 'destructive' : variant,
               size,
             }),
-            "cursor-text",
+            'cursor-text',
             className
           )}
           onClick={handleContainerClick}
@@ -213,22 +223,22 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
             <AnimatePresence>
               {tags.map((tag, index) => (
                 <motion.div
-                  key={`${tag}-${index}`}
-                  initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  key={`${tag}-${index}`}
+                  layout
                   transition={{
                     duration: 0.2,
-                    ease: "easeOut",
+                    ease: 'easeOut',
                   }}
-                  layout
                 >
                   <Chip
-                    variant={tagVariant}
-                    size={chipSizeMapping[size || "default"]}
+                    className="pointer-events-auto rounded-ele"
                     dismissible
                     onDismiss={() => removeTag(tag)}
-                    className="pointer-events-auto rounded-ele"
+                    size={chipSizeMapping[size || 'default']}
+                    variant={tagVariant}
                   >
                     {tag}
                   </Chip>
@@ -236,38 +246,38 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
               ))}
             </AnimatePresence>
             <input
+              className="min-w-[120px] flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+              disabled={disabled || (maxTags ? tags.length >= maxTags : false)}
+              onBlur={() => setTimeout(() => setIsFocused(false), 100)}
+              onChange={handleInputChange}
+              onFocus={() => setIsFocused(true)}
+              onKeyDown={handleKeyDown}
+              placeholder={tags.length === 0 ? placeholder : ''}
               ref={inputRef}
               type="text"
               value={inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder={tags.length === 0 ? placeholder : ""}
-              disabled={disabled || (maxTags ? tags.length >= maxTags : false)}
-              className="flex-1 min-w-[120px] bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setTimeout(() => setIsFocused(false), 100)}
               {...props}
             />
           </div>
         </div>
         {/* Suggestions dropdown */}
         {isFocused && filteredSuggestions.length > 0 && (
-          <div className="absolute left-0 z-10 mt-1 w-full rounded-ele border border-border bg-popover shadow-lg text-sm max-h-48 overflow-auto bg-background">
+          <div className="absolute left-0 z-10 mt-1 max-h-48 w-full overflow-auto rounded-ele border border-border bg-background bg-popover text-sm shadow-lg">
             {filteredSuggestions.map((sugg, idx) => (
               <button
-                key={sugg}
-                type="button"
                 className={cn(
-                  "w-full text-left px-3 py-2 transition-colors",
+                  'w-full px-3 py-2 text-left transition-colors',
                   idx === highlightedIndex
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent"
+                    ? 'bg-accent text-accent-foreground'
+                    : 'hover:bg-accent'
                 )}
+                key={sugg}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   addTag(sugg);
                 }}
                 onMouseEnter={() => setHighlightedIndex(idx)}
+                type="button"
               >
                 {sugg}
               </button>
@@ -276,13 +286,13 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         )}
         {clearAllButton && tags.length > 0 && (
           <button
-            type="button"
-            onClick={handleClearAll}
-            disabled={disabled}
-            className="absolute end-2 top-1/2 -translate-y-1/2 rounded-ele p-1 hover:bg-accent transition-colors disabled:pointer-events-none disabled:opacity-50"
             aria-label="Clear all tags"
+            className="-translate-y-1/2 absolute end-2 top-1/2 rounded-ele p-1 transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+            disabled={disabled}
+            onClick={handleClearAll}
+            type="button"
           >
-            <X size={14} className="text-muted-foreground" />
+            <X className="text-muted-foreground" size={14} />
           </button>
         )}
       </div>
@@ -290,6 +300,6 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
   }
 );
 
-TagInput.displayName = "TagInput";
+TagInput.displayName = 'TagInput';
 
 export { TagInput, tagInputVariants };

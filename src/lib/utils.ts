@@ -1,6 +1,6 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import sanitizeHtml from "sanitize-html";
+import { type ClassValue, clsx } from 'clsx';
+import sanitizeHtml from 'sanitize-html';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -8,8 +8,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export function sanitizeString(input: string): string {
   return sanitizeHtml(input, {
-    allowedTags: ["b", "i", "em", "strong", "u", "br", "p", "ul", "ol", "li"],
+    allowedTags: ['b', 'i', 'em', 'strong', 'u', 'br', 'p', 'ul', 'ol', 'li'],
     allowedAttributes: {},
-    disallowedTagsMode: "discard",
+    disallowedTagsMode: 'discard',
   });
 }

@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     viewTransition: true,
   },
   images: {
-    domains: ["em-content.zobj.net", "68u63cxp9s.ufs.sh"],
+    domains: ['em-content.zobj.net', '68u63cxp9s.ufs.sh'],
   },
 };
 

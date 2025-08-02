@@ -16,12 +16,14 @@ export type Folder = {
 };
 
 // Storage keys
-const NOTES_KEY = "ikinotes-notes";
-const FOLDERS_KEY = "ikinotes-folders";
+const NOTES_KEY = 'ikinotes-notes';
+const FOLDERS_KEY = 'ikinotes-folders';
 
 // --- Notes ---
 export function getNotes(): Note[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') {
+    return [];
+  }
   const raw = localStorage.getItem(NOTES_KEY);
   return raw ? JSON.parse(raw) : [];
 }
@@ -58,7 +60,9 @@ export function moveNoteToFolder(
 
 // --- Folders ---
 export function getFolders(): Folder[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') {
+    return [];
+  }
   const raw = localStorage.getItem(FOLDERS_KEY);
   return raw ? JSON.parse(raw) : [];
 }

@@ -1,63 +1,63 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { getNotes, updateNote, Note } from "@/lib/note-storage";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft, Home, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Loader } from '@/components/ui/loader';
 import {
   Modal,
   ModalContent,
-  ModalHeader,
   ModalFooter,
+  ModalHeader,
   ModalTitle,
-  ModalDescription,
-  ModalClose,
-} from "@/components/ui/modal";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Home, Trash2 } from "lucide-react";
-import { Loader } from "@/components/ui/loader";
-import { Sparkles } from "lucide-react";
-import { Alert } from "@/components/ui/alert";
-import { TagInput } from "@/components/ui/tag-input";
-import Image from "next/image";
-import { unstable_ViewTransition as ViewTransition } from "react";
-import Link from "next/link";
+} from '@/components/ui/modal';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { TagInput } from '@/components/ui/tag-input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  deleteNote,
+  getNotes,
+  type Note,
+  updateNote,
+} from '@/lib/note-service';
 
 export default function NewNotePage() {
   const router = useRouter();
   const params = useSearchParams();
-  const id = params.get("id");
+  const id = params.get('id');
   const [note, setNote] = useState<Note | null>(null);
-  const [content, setContent] = useState("");
-  const [title, setTitle] = useState("");
+  const [content, setContent] = useState('');
+  const [title, setTitle] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState("");
-  const [summarizing, setSummarizing] = useState(false);
-  const [summaryError, setSummaryError] = useState("");
+  const [_summary, setSummary] = useState('');
+  const [_summarizing, setSummarizing] = useState(false);
+  const [_summaryError, setSummaryError] = useState('');
   const [aiAction, setAiAction] = useState<string | null>(null);
-  const [aiResult, setAiResult] = useState("");
+  const [aiResult, setAiResult] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState("");
-  const [askInput, setAskInput] = useState("");
+  const [aiError, setAiError] = useState('');
+  const [askInput, setAskInput] = useState('');
   const [showAiEdit, setShowAiEdit] = useState(false);
-  const [aiEditContent, setAiEditContent] = useState("");
-  const [aiHeading, setAiHeading] = useState("");
+  const [aiEditContent, setAiEditContent] = useState('');
+  const [_aiHeading, _setAiHeading] = useState('');
   const [headingLoading, setHeadingLoading] = useState(false);
   const [unsaved, setUnsaved] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
-  const [aiEditPrompt, setAiEditPrompt] = useState("");
+  const [aiEditPrompt, setAiEditPrompt] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+  function _handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setContent(e.target.value);
     setUnsaved(true);
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height =
-        textareaRef.current.scrollHeight + "px";
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
       // Removed scrollTop restore to prevent auto-scroll to end
     }
   }
@@ -67,51 +67,57 @@ export default function NewNotePage() {
     setUnsaved(true);
   }
 
-  function handleSave() {
-    if (!note) return;
-    const updated = { ...note, content, title, tags, updatedAt: Date.now() };
-    updateNote(updated);
-    setUnsaved(false);
-    setNote(updated);
+  async function handleSave() {
+    if (!note) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const updated = await updateNote(note.id, { content, title, tags });
+      setUnsaved(false);
+      setNote(updated);
+    } catch (_error) {}
+    setTimeout(() => {
+      setSaving(false);
+    }, 1000);
   }
 
   useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    const notes = getNotes();
-    const found = notes.find((n) => n.id === id);
-    if (found) {
-      setNote(found);
-      setContent(found.content);
-      setTitle(found.title);
-      setTags(found.tags || []);
+    if (!id) {
+      return;
     }
-    // Gather all unique tags from all notes
-    setAllTags(Array.from(new Set(notes.flatMap((n) => n.tags || []))));
-    setLoading(false);
+
+    async function loadNote() {
+      setLoading(true);
+      try {
+        const notes = await getNotes();
+        const found = notes.find((n) => n.id === id);
+        if (found) {
+          setNote(found);
+          setContent(found.content);
+          setTitle(found.title);
+          setTags(found.tags || []);
+        }
+        // Gather all unique tags from all notes
+        setAllTags(Array.from(new Set(notes.flatMap((n) => n.tags || []))));
+      } catch (_error) {}
+      setLoading(false);
+    }
+
+    loadNote();
   }, [id]);
 
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height =
-        textareaRef.current.scrollHeight + "px";
-      // Removed scrollTop restore to prevent auto-scroll to end
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-  }, [content]);
-
-  function handleBack() {
-    router.back();
-  }
-
-  function handleHome() {
-    router.push("/");
-  }
+  }, []);
 
   // Simple line diff function
   function getDiffLines(oldStr: string, newStr: string) {
-    const oldLines = oldStr.split("\n");
-    const newLines = newStr.split("\n");
+    const oldLines = oldStr.split('\n');
+    const newLines = newStr.split('\n');
     const diff = [];
     let i = 0,
       j = 0;
@@ -121,20 +127,20 @@ export default function NewNotePage() {
         j < newLines.length &&
         oldLines[i] === newLines[j]
       ) {
-        diff.push({ type: "unchanged", text: oldLines[i] });
+        diff.push({ type: 'unchanged', text: oldLines[i] });
         i++;
         j++;
       } else if (
         j < newLines.length &&
         (!oldLines[i] || oldLines[i] !== newLines[j])
       ) {
-        diff.push({ type: "added", text: newLines[j] });
+        diff.push({ type: 'added', text: newLines[j] });
         j++;
       } else if (
         i < oldLines.length &&
         (!newLines[j] || oldLines[i] !== newLines[j])
       ) {
-        diff.push({ type: "removed", text: oldLines[i] });
+        diff.push({ type: 'removed', text: oldLines[i] });
         i++;
       } else {
         i++;
@@ -144,38 +150,45 @@ export default function NewNotePage() {
     return diff;
   }
 
-  function handleDelete() {
-    if (!note) return;
-    const notes = getNotes().filter((n) => n.id !== note.id);
-    localStorage.setItem("ikinotes-notes", JSON.stringify(notes));
-    router.push("/");
+  async function handleDelete() {
+    if (!note) {
+      return;
+    }
+    try {
+      await deleteNote(note.id);
+      router.push('/');
+    } catch (_error) {}
   }
 
-  async function handleSummarize() {
+  async function _handleSummarize() {
     setSummarizing(true);
-    setSummary("");
-    setSummaryError("");
+    setSummary('');
+    setSummaryError('');
     try {
-      const res = await fetch("/api/summarize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
       });
-      if (!res.body) throw new Error("No response body");
+      if (!res.body) {
+        throw new Error('No response body');
+      }
       const reader = res.body.getReader();
-      let result = "";
+      let result = '';
       const decoder = new TextDecoder();
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          break;
+        }
         result += decoder.decode(value, { stream: true });
         setSummary(result);
       }
       result += decoder.decode();
       setSummary(result);
       setSummarizing(false);
-    } catch (e) {
-      setSummaryError("Failed to summarize");
+    } catch (_e) {
+      setSummaryError('Failed to summarize');
       setSummarizing(false);
     }
   }
@@ -186,291 +199,305 @@ export default function NewNotePage() {
     overrideContent?: string
   ) {
     setAiAction(action);
-    setAiResult("");
-    setAiError("");
+    setAiResult('');
+    setAiError('');
     setAiLoading(true);
     try {
       const usedContent = overrideContent ?? content;
-      const res = await fetch("/api/ai-action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/ai-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: usedContent, action, question }),
       });
-      if (!res.body) throw new Error("No response body");
+      if (!res.body) {
+        throw new Error('No response body');
+      }
       const reader = res.body.getReader();
-      let result = "";
+      let result = '';
       const decoder = new TextDecoder();
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          break;
+        }
         result += decoder.decode(value, { stream: true });
-        if (action === "ask" || action === "summarize") setAiResult(result);
+        if (action === 'ask' || action === 'summarize') {
+          setAiResult(result);
+        }
         // Do not setTitle here for heading
-        else if (action !== "heading") setContent(result);
+        else if (action !== 'heading') {
+          setContent(result);
+        }
       }
       result += decoder.decode();
-      if (action === "ask" || action === "summarize") setAiResult(result);
-      else if (action === "heading") {
+      if (action === 'ask' || action === 'summarize') {
+        setAiResult(result);
+      } else if (action === 'heading') {
         setTitle(result.trim());
         setUnsaved(true);
-      } else setContent(result);
-    } catch (e) {
-      setAiError("Failed to process AI action");
+      } else {
+        setContent(result);
+      }
+    } catch (_e) {
+      setAiError('Failed to process AI action');
     }
     setAiLoading(false);
   }
 
   async function handleAIHeading() {
     setHeadingLoading(true);
-    await handleAIAction("heading");
+    await handleAIAction('heading');
     setHeadingLoading(false);
   }
 
   return (
     <main
-      className="flex flex-col max-w-2xl mx-auto px-4 gap-6 py-4"
-      style={{ height: "100vh", minHeight: "100vh" }}
+      className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-4"
+      style={{ height: '100vh', minHeight: '100vh' }}
     >
       {loading ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center">
           <Loader />
         </div>
       ) : (
         <>
-          <nav className="flex gap-2 items-center md:absolute right-12">
-            <Button variant="ghost" size={"icon"} asChild>
-              <Link href={`/`}>
+          <nav className="right-12 flex items-center gap-2 md:absolute">
+            <Button asChild size={'icon'} variant="ghost">
+              <Link href={'/'}>
                 <ArrowLeft />
               </Link>
             </Button>
-            <Button variant="ghost" size={"icon"} asChild>
-              <Link href={`/`}>
+            <Button asChild size={'icon'} variant="ghost">
+              <Link href={'/'}>
                 <Home />
               </Link>
             </Button>
             <Button
-              variant="ghost"
-              size={"icon"}
-              onClick={handleDelete}
-              className="ml-auto"
               aria-label="Delete note"
+              className="ml-auto"
+              onClick={handleDelete}
+              size={'icon'}
+              variant="ghost"
             >
-              <Trash2 className="w-5 h-5 text-destructive" />
+              <Trash2 className="h-5 w-5 text-destructive" />
             </Button>
           </nav>
           <Input
-            className=" text-[#1d4ed8]  w-full text-2xl font-semibold bg-transparent p-0 focus-visible:outline-none focus-visible:ring-0  focus-visible:border-0 border-none focus-visible:shadow-none"
-            value={title}
+            className="w-full border-none bg-transparent p-0 font-semibold text-2xl text-[#1d4ed8] focus-visible:border-0 focus-visible:shadow-none focus-visible:outline-none focus-visible:ring-0"
             onChange={handleTitleChange}
             placeholder="Note title..."
-            style={{ minHeight: 0, boxShadow: "none", border: "none" }}
+            style={{ minHeight: 0, boxShadow: 'none', border: 'none' }}
+            value={title}
           />
           <TagInput
-            tags={tags}
+            className="mb-2"
             onTagsChange={(newTags) => {
               setTags(newTags);
               setUnsaved(true);
             }}
             placeholder="Add tags..."
-            className="mb-2"
             suggestions={allTags}
+            tags={tags}
           />
           <div
-            className="flex flex-col gap-3 flex-1"
-            style={{ height: "calc(100vh - 220px)" }}
+            className="flex flex-1 flex-col gap-3"
+            style={{ height: 'calc(100vh - 220px)' }}
           >
             <form
+              className="flex items-center gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
-                handleAIAction("ask", askInput);
+                handleAIAction('ask', askInput);
               }}
-              className="flex gap-2 items-center"
             >
               <Input
-                type="text"
-                className="border rounded px-4 py-1 text-sm"
-                placeholder="Ask a question..."
-                value={askInput}
-                onChange={(e) => setAskInput(e.target.value)}
+                className="rounded border px-4 py-1 text-sm"
                 disabled={aiLoading}
+                onChange={(e) => setAskInput(e.target.value)}
+                placeholder="Ask a question..."
+                type="text"
+                value={askInput}
               />
               <Button
-                type="submit"
                 disabled={aiLoading || !askInput.trim() || !content.trim()}
+                type="submit"
                 variant="outline"
               >
                 Ask
               </Button>
             </form>
-            <div className="flex flex-wrap gap-2 mb-2 items-center">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
               <Button
                 className="grow"
-                onClick={() => handleAIAction("summarize")}
                 disabled={aiLoading || !content.trim()}
+                onClick={() => handleAIAction('summarize')}
                 variant="outline"
               >
                 Summarize
               </Button>
               <Button
                 className="grow"
-                onClick={() => handleAIAction("rewrite")}
                 disabled={aiLoading || !content.trim()}
+                onClick={() => handleAIAction('rewrite')}
                 variant="outline"
               >
                 Rewrite
               </Button>
               <Button
                 className="grow"
-                onClick={() => handleAIAction("fix")}
                 disabled={aiLoading || !content.trim()}
+                onClick={() => handleAIAction('fix')}
                 variant="outline"
               >
                 Fix Grammar
               </Button>
               <Button
                 className="grow"
+                disabled={aiLoading || !content.trim()}
                 onClick={() => {
                   setAiEditContent(content);
                   setShowAiEdit(true);
-                  setAiEditPrompt("");
+                  setAiEditPrompt('');
                 }}
-                disabled={aiLoading || !content.trim()}
                 variant="outline"
               >
                 Edit with AI
               </Button>
               <Button
                 className="grow"
-                onClick={handleAIHeading}
                 disabled={headingLoading || !content.trim()}
+                onClick={handleAIHeading}
                 variant="outline"
               >
                 Generate Heading
               </Button>
             </div>
-            <Modal open={showAiEdit} onOpenChange={setShowAiEdit}>
-              <ModalContent className="w-full h-full max-h-[95vh] flex flex-col p-4 sm:p-8 gap-4 max-w-[95%]">
+            <Modal onOpenChange={setShowAiEdit} open={showAiEdit}>
+              <ModalContent className="flex h-full max-h-[95vh] w-full max-w-[95%] flex-col gap-4 p-4 sm:p-8">
                 <ModalHeader>
                   <ModalTitle>Edit with AI</ModalTitle>
                 </ModalHeader>
-                <div className="flex flex-col sm:flex-row flex-1 gap-4 sm:gap-8 overflow-hidden h-full">
-                  <div className="flex-1 flex flex-col min-w-0">
-                    <span className="font-semibold mb-2">Original Note</span>
-                    <ScrollArea className="border border-border rounded-card p-2 text-base flex-1 bg-muted/30 whitespace-pre-wrap">
+                <div className="flex h-full flex-1 flex-col gap-4 overflow-hidden sm:flex-row sm:gap-8">
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="mb-2 font-semibold">Original Note</span>
+                    <ScrollArea className="flex-1 whitespace-pre-wrap rounded-card border border-border bg-muted/30 p-2 text-base">
                       {content}
                     </ScrollArea>
                   </div>
-                  <div className="flex-1 flex flex-col min-w-0">
-                    <span className="font-semibold mb-2">
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="mb-2 font-semibold">
                       AI Edited Note (Diff)
                     </span>
-                    <ScrollArea className="border border-border rounded-card p-2 text-base flex-1 whitespace-pre-wrap">
+                    <ScrollArea className="flex-1 whitespace-pre-wrap rounded-card border border-border p-2 text-base">
                       {getDiffLines(content, aiEditContent).map((line, idx) => (
                         <div
                           key={idx}
                           style={{
                             background:
-                              line.type === "added"
-                                ? "#e6ffed"
-                                : line.type === "removed"
-                                ? "#ffeef0"
-                                : "transparent",
+                              line.type === 'added'
+                                ? '#e6ffed'
+                                : line.type === 'removed'
+                                  ? '#ffeef0'
+                                  : 'transparent',
                             color:
-                              line.type === "added"
-                                ? "#22863a"
-                                : line.type === "removed"
-                                ? "#b31d28"
-                                : undefined,
+                              line.type === 'added'
+                                ? '#22863a'
+                                : line.type === 'removed'
+                                  ? '#b31d28'
+                                  : undefined,
                           }}
                         >
-                          {line.type === "added"
-                            ? "+ "
-                            : line.type === "removed"
-                            ? "- "
-                            : "  "}
+                          {line.type === 'added'
+                            ? '+ '
+                            : line.type === 'removed'
+                              ? '- '
+                              : '  '}
                           {line.text}
                         </div>
                       ))}
                     </ScrollArea>
                   </div>
-                </div>{" "}
+                </div>{' '}
                 <div className="flex flex-col gap-4">
                   <Input
-                    type="text"
-                    size={"lg"}
                     className="w-full"
-                    value={aiEditPrompt}
                     onChange={(e) => setAiEditPrompt(e.target.value)}
                     placeholder="Enter your prompt for AI..."
+                    size={'lg'}
+                    type="text"
+                    value={aiEditPrompt}
                   />
                   <Button
-                    variant="outline"
                     className="self-end"
+                    disabled={aiLoading || !aiEditPrompt.trim()}
                     onClick={async () => {
                       setAiLoading(true);
-                      setAiError("");
+                      setAiError('');
                       try {
                         const prompt =
                           aiEditPrompt.trim() +
                           "\nDo not include any meta text like 'Here's a summary:', 'Here's a simplified version:', or similar. Only output the result.";
-                        const res = await fetch("/api/ai-action", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
+                        const res = await fetch('/api/ai-action', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
                             content,
-                            action: "rewrite",
+                            action: 'rewrite',
                             question: prompt,
                           }),
                         });
-                        if (!res.body) throw new Error("No response body");
+                        if (!res.body) {
+                          throw new Error('No response body');
+                        }
                         const reader = res.body.getReader();
-                        let result = "";
+                        let result = '';
                         const decoder = new TextDecoder();
                         while (true) {
                           const { done, value } = await reader.read();
-                          if (done) break;
+                          if (done) {
+                            break;
+                          }
                           result += decoder.decode(value, { stream: true });
                         }
                         result += decoder.decode();
                         setAiEditContent(result);
-                      } catch (e) {
-                        setAiError("Failed to process AI action");
+                      } catch (_e) {
+                        setAiError('Failed to process AI action');
                       }
                       setAiLoading(false);
                     }}
-                    disabled={aiLoading || !aiEditPrompt.trim()}
+                    variant="outline"
                   >
                     Run AI Edit
                   </Button>
                 </div>
-                <ModalFooter className="justify-end mt-6">
+                <ModalFooter className="mt-6 justify-end">
                   <Button
+                    onClick={() => setShowAiEdit(false)}
                     type="button"
                     variant="ghost"
-                    onClick={() => setShowAiEdit(false)}
                   >
                     Cancel
                   </Button>
                   <Button
-                    type="button"
-                    variant="default"
-                    onClick={() => {
+                    disabled={aiEditContent.trim() === content.trim()}
+                    onClick={async () => {
                       setShowAiEdit(false);
                       if (note) {
-                        const updated = {
-                          ...note,
-                          content: aiEditContent,
-                          title,
-                          tags,
-                          updatedAt: Date.now(),
-                        };
-                        updateNote(updated);
-                        setUnsaved(false);
-                        setNote(updated);
-                        setContent(aiEditContent);
+                        try {
+                          const updated = await updateNote(note.id, {
+                            content: aiEditContent,
+                            title,
+                            tags,
+                          });
+                          setUnsaved(false);
+                          setNote(updated);
+                          setContent(aiEditContent);
+                        } catch (_error) {}
                       }
                     }}
-                    disabled={aiEditContent.trim() === content.trim()}
+                    type="button"
+                    variant="default"
                   >
                     Confirm
                   </Button>
@@ -478,51 +505,56 @@ export default function NewNotePage() {
               </ModalContent>
             </Modal>
             <div className="flex gap-2">
-              {(aiAction === "ask" || aiAction === "summarize") && aiResult && (
-                <div className="mb-2 p-3 rounded bg-muted text-base">
-                  <span className="font-semibold capitalize">{aiAction}:</span>{" "}
+              {(aiAction === 'ask' || aiAction === 'summarize') && aiResult && (
+                <div className="mb-2 rounded bg-muted p-3 text-base">
+                  <span className="font-semibold capitalize">{aiAction}:</span>{' '}
                   {aiResult}
                 </div>
               )}
               {aiError && (
-                <div className="mb-2 p-3 rounded bg-destructive/10 text-destructive text-base">
+                <div className="mb-2 rounded bg-destructive/10 p-3 text-base text-destructive">
                   {aiError}
                 </div>
               )}
             </div>
-            <ScrollArea className="flex-1 w-full">
+            <ScrollArea className="w-full flex-1">
               <Textarea
-                ref={textareaRef}
-                className="w-full min-h-[80px] bg-transparent text-base focus:outline-none border-none shadow-none p-0 h-auto rounded-ele px-0 py-2 flex-1"
-                style={{
-                  boxShadow: "none",
-                  border: "none",
-                  outline: "none",
-                  overflowY: "auto",
-                  height: "100%",
-                  maxHeight: "100%",
-                  resize: "none",
-                  background: "transparent",
+                className="h-auto min-h-[80px] w-full flex-1 rounded-ele border-none bg-transparent p-0 px-0 py-2 text-base shadow-none focus:outline-none"
+                onBlur={(e) => {
+                  setContent(e.target.value);
                 }}
-                value={content}
                 onChange={(e) => {
                   setContent(e.target.value);
                   setUnsaved(true);
                 }}
-                onBlur={(e) => {
-                  setContent(e.target.value);
+                ref={textareaRef}
+                style={{
+                  boxShadow: 'none',
+                  border: 'none',
+                  outline: 'none',
+                  overflowY: 'auto',
+                  height: '100%',
+                  maxHeight: '100%',
+                  resize: 'none',
+                  background: 'transparent',
                 }}
+                value={content}
               />
             </ScrollArea>
             {unsaved && (
               <Alert
-                variant={"info"}
-                className="text-center rounded-0 fixed bottom-3 right-3 max-w-[95%] w-fit"
+                className="fixed right-3 bottom-3 w-fit max-w-[95%] rounded-0 text-center"
+                variant={'info'}
               >
                 You have unsaved changes.
               </Alert>
             )}
-            <Button onClick={handleSave} disabled={!unsaved} variant="default">
+            <Button
+              disabled={!unsaved}
+              loading={saving}
+              onClick={handleSave}
+              variant="default"
+            >
               Save
             </Button>
           </div>
