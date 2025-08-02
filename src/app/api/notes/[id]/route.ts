@@ -5,7 +5,7 @@ import { deleteNote, getNoteById, updateNote } from '@/lib/db/queries';
 export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -29,7 +29,7 @@ export async function GET(
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -64,7 +64,7 @@ export async function PUT(
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const { userId } = await auth();
     if (!userId) {

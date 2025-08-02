@@ -2,7 +2,6 @@ import { auth } from '@clerk/nextjs/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { addNote, getNotes } from '@/lib/db/queries';
 
-export const runtime = 'nodejs'; // Or 'edge' if compatible
 
 export async function GET(request: NextRequest) {
   try {
