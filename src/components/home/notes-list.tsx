@@ -39,7 +39,7 @@ export function NotesList({
   return (
     <div className="flex flex-col gap-8">
       {Object.entries(grouped).map(([tag, notes]) => (
-        <div className="flex flex-col gap-2" key={tag}>
+        <div className="flex flex-col gap-2 max-[350px]:gap-4" key={tag}>
           <div className="font-semibold text-base text-foreground">{tag}</div>
           {notes.map((note) => (
             <NoteItem key={note.id} note={note} />
@@ -48,7 +48,7 @@ export function NotesList({
       ))}
       {untagged.length > 0 && Object.keys(grouped).length > 0 && <Separator />}
       {untagged.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 max-[350px]:gap-4">
           {untagged.map((note) => (
             <NoteItem key={note.id} note={note} />
           ))}
