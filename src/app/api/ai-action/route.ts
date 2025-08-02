@@ -4,63 +4,95 @@ import { Redis } from '@upstash/redis';
 import { streamText } from 'ai';
 import type { NextRequest } from 'next/server';
 import { sanitizeString } from '@/lib/utils';
+import { LRUCache } from 'lru-cache';
+import { createHash } from 'crypto';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
+
 const ratelimit = new Ratelimit({
   redis,
   limiter: Ratelimit.fixedWindow(15, '5 m'),
 });
 
+const responseCache = new LRUCache<string, string>({
+  max: 1000,
+  ttl: 60 * 60 * 1000,
+});
+
+const rateLimitCache = new LRUCache<string, { success: boolean; limit: number; remaining: number; reset: number }>({
+  max: 1000,
+  ttl: 5 * 60 * 1000,
+});
+
 const PROMPTS = {
-  summarize:
-    process.env.AI_PROMPT_SUMMARIZE ||
-    'Summarize the following note in 4-5 sentences:\n\n{content}',
-  ask:
-    process.env.AI_PROMPT_ASK ||
-    "Given the following note, answer the user's question as clearly as possible.\n\nNote:\n{content}\n\nQuestion: {question}\nAnswer:",
-  rewrite:
-    process.env.AI_PROMPT_REWRITE ||
-    'Rewrite the following note to b    e clearer, more concise, and engaging:\n\n{content}',
-  improve:
-    process.env.AI_PROMPT_IMPROVE ||
-    'Suggest improvements for the following note. List specific suggestions for clarity, grammar, and style:\n\n{content}',
-  fix:
-    process.env.AI_PROMPT_FIX ||
-    'Correct any grammar, spelling, or punctuation errors in the following note. Return the corrected note only:\n\n{content}',
-  heading:
-    process.env.AI_PROMPT_HEADING ||
-    'Generate a concise, relevant, and engaging title for the following note. Return only the title:\n\n{content}',
+  summarize: process.env.AI_PROMPT_SUMMARIZE || 'Summarize this in 4-5 sentences:\n{content}',
+  ask: process.env.AI_PROMPT_ASK || 'Given this note, answer the question clearly.\nNote:\n{content}\nQuestion: {question}\nAnswer:',
+  rewrite: process.env.AI_PROMPT_REWRITE || 'Rewrite this to be clearer, concise, and engaging:\n{content}',
+  improve: process.env.AI_PROMPT_IMPROVE || 'Suggest specific improvements for clarity, grammar, and style:\n{content}',
+  fix: process.env.AI_PROMPT_FIX || 'Correct grammar, spelling, or punctuation errors. Return the corrected note:\n{content}',
+  heading: process.env.AI_PROMPT_HEADING || 'Generate a concise, relevant, engaging title:\n{content}',
+};
+
+const RESPONSE_HEADERS = {
+  'Content-Type': 'text/plain; charset=utf-8',
+  'Cache-Control': 'no-store',
 };
 
 export async function POST(req: NextRequest) {
-  // Use IP address for per-user rate limiting
-  const ip =
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
-  const result = await ratelimit.limit(ip);
-  if (!result.success) {
-    return new Response(
-      JSON.stringify({
-        message: 'The request has been rate limited.',
-        rateLimitState: result,
-      }),
-      {
-        status: 429,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-RateLimit-Limit': result.limit.toString(),
-          'X-RateLimit-Remaining': result.remaining.toString(),
-        },
-      }
-    );
+  if (req.headers.get('content-type') !== 'application/json') {
+    return new Response('Invalid Content-Type', { status: 400 });
   }
-  const body: {
-    content?: string;
-    action?: keyof typeof PROMPTS;
-    question?: string;
-  } = await req.json();
+
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
+  const cachedRateLimit = rateLimitCache.get(ip);
+  if (cachedRateLimit) {
+    if (!cachedRateLimit.success) {
+      return new Response(
+        JSON.stringify({
+          message: 'The request has been rate limited.',
+          rateLimitState: cachedRateLimit,
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': cachedRateLimit.limit.toString(),
+            'X-RateLimit-Remaining': cachedRateLimit.remaining.toString(),
+          },
+        }
+      );
+    }
+  } else {
+    const result = await ratelimit.limit(ip);
+    rateLimitCache.set(ip, result);
+    if (!result.success) {
+      return new Response(
+        JSON.stringify({
+          message: 'The request has been rate limited.',
+          rateLimitState: result,
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': result.limit.toString(),
+            'X-RateLimit-Remaining': result.remaining.toString(),
+          },
+        }
+      );
+    }
+  }
+
+  let body: { content?: string; action?: keyof typeof PROMPTS; question?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return new Response('Invalid JSON', { status: 400 });
+  }
+
   let { content, action, question } = body;
   content = sanitizeString((content ?? '').trim());
   if (question) {
@@ -69,8 +101,21 @@ export async function POST(req: NextRequest) {
   if (!(content && action && action in PROMPTS)) {
     return new Response('Missing or invalid input', { status: 400 });
   }
+
+  const cacheKey = createHash('sha256').update(`${action}:${content}:${question || ''}`).digest('hex');
+  const cachedResponse = responseCache.get(cacheKey);
+  if (cachedResponse) {
+    return new Response(cachedResponse, {
+      headers: {
+        ...RESPONSE_HEADERS,
+        'X-Cache-Hit': 'true',
+        'X-RateLimit-Limit': rateLimitCache.get(ip)!.limit.toString(),
+        'X-RateLimit-Remaining': rateLimitCache.get(ip)!.remaining.toString(),
+      },
+    });
+  }
+
   let prompt = PROMPTS[action];
-  // If action is rewrite and user provided a prompt, use their prompt directly
   if (action === 'rewrite' && question) {
     prompt = `${question}\n\n${content}`;
   } else {
@@ -84,12 +129,26 @@ export async function POST(req: NextRequest) {
     model: groq('llama-3.1-8b-instant'),
     prompt,
   });
-  return new Response(textStream, {
+
+  let fullText = '';
+  const textStreamWithCaching = new ReadableStream({
+    async start(controller) {
+      for await (const chunk of textStream) {
+        fullText += chunk;
+        controller.enqueue(chunk);
+      }
+      responseCache.set(cacheKey, fullText);
+      controller.close();
+    },
+  });
+
+  return new Response(textStreamWithCaching, {
     headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'no-store',
-      'X-RateLimit-Limit': result.limit.toString(),
-      'X-RateLimit-Remaining': result.remaining.toString(),
+      ...RESPONSE_HEADERS,
+      'X-Cache-Hit': 'false',
+      'X-RateLimit-Limit': rateLimitCache.get(ip)!.limit.toString(),
+      'X-RateLimit-Remaining': rateLimitCache.get(ip)!.remaining.toString(),
     },
   });
 }
+

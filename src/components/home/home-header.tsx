@@ -50,13 +50,9 @@ export function HomeHeader({ onCreateNote, showAuth = true }: HomeHeaderProps) {
               </SignUpButton>
             </SignedOut>
             <SignedIn>
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: 'w-8 h-8',
-                  },
-                }}
-              />
+             <Button size="icon" variant="secondary">
+                <UserButton />
+              </Button>
             </SignedIn>
           </>
         )}

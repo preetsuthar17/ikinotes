@@ -1,64 +1,82 @@
 import { auth } from '@clerk/nextjs/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { addNote, getNotes } from '@/lib/db/queries';
+import { LRUCache } from 'lru-cache';
+import { createHash } from 'crypto';
 
+const notesCache = new LRUCache<string, any>({
+  max: 1000,
+  ttl: 30 * 1000,
+});
+
+const RESPONSE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=30',
+};
 
 export async function GET(request: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const url = new URL(request.url);
+  const sortOrder = (url.searchParams.get('sort') as 'newest' | 'oldest') || 'newest';
+  const cacheKey = createHash('sha256').update(`${userId}:${sortOrder}`).digest('hex');
+
+  const cachedNotes = notesCache.get(cacheKey);
+  if (cachedNotes) {
+    return NextResponse.json(cachedNotes, {
+      status: 200,
+      headers: {
+        ...RESPONSE_HEADERS,
+        'X-Cache-Hit': 'true',
+      },
+    });
+  }
+
   try {
-    const [{ userId }, url] = await Promise.all([auth(), new URL(request.url)]);
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const sortOrder =
-      (url.searchParams.get('sort') as 'newest' | 'oldest') || 'newest';
-
     const notes = await getNotes(sortOrder);
+    notesCache.set(cacheKey, notes);
     return NextResponse.json(notes, {
       status: 200,
       headers: {
-        'Cache-Control': 'public, s-maxage=30',
+        ...RESPONSE_HEADERS,
+        'X-Cache-Hit': 'false',
       },
     });
   } catch {
-    return NextResponse.json(
-      { error: 'Failed to fetch notes' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
+  if (request.headers.get('content-type') !== 'application/json') {
+    return NextResponse.json({ error: 'Invalid Content-Type' }, { status: 400 });
+  }
+
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  let body;
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
 
-    const {
-      title,
-      content = '',
-      tags = [],
-      folderId = null,
-    } = await request.json();
+  const { title, content = '', tags = [], folderId = null } = body;
+  if (!title) {
+    return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+  }
 
-    if (!title) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
-    }
-
-    const note = await addNote({
-      title,
-      content,
-      tags,
-      folderId,
-    });
-
+  try {
+    const note = await addNote({ title, content, tags, folderId });
+    notesCache.clear();
     return NextResponse.json(note, { status: 201 });
   } catch {
-    return NextResponse.json(
-      { error: 'Failed to create note' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create note' }, { status: 500 });
   }
 }
+
