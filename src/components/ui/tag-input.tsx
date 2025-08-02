@@ -141,13 +141,13 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         const parts = value.split(separator);
         if (parts.length > 1) {
           parts.slice(0, -1).forEach((part) => addTag(part));
-          setInputValue(parts.at(-1));
+          setInputValue(parts.at(-1) || '');
           return;
         }
       } else if (typeof separator === 'string' && value.includes(separator)) {
         const parts = value.split(separator);
         parts.slice(0, -1).forEach((part) => addTag(part));
-        setInputValue(parts.at(-1));
+        setInputValue(parts.at(-1) || '');
         return;
       }
 
@@ -185,7 +185,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         inputValue === '' &&
         tags.length > 0
       ) {
-        removeTag(tags.at(-1));
+        removeTag(tags.at(-1) || '');
       }
     };
 
