@@ -4,7 +4,7 @@ import { deleteNote, getNoteById, updateNote } from '@/lib/db/queries';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     const { userId } = await auth();
@@ -12,7 +12,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const note = await getNoteById(params.id);
+    const { id } = await params;
+    const note = await getNoteById(id);
     if (!note) {
       return NextResponse.json({ error: 'Note not found' }, { status: 404 });
     }
@@ -28,7 +29,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     const { userId } = await auth();
@@ -36,10 +37,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
     const { title, content, tags, folderId } = body;
 
-    const updatedNote = await updateNote(params.id, {
+    const updatedNote = await updateNote(id, {
       title,
       content,
       tags,
@@ -63,7 +65,7 @@ export async function PUT(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     const { userId } = await auth();
@@ -71,7 +73,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await deleteNote(params.id);
+    const { id } = await params;
+    await deleteNote(id);
     return NextResponse.json({ success: true });
   } catch (_error) {
     return NextResponse.json(
