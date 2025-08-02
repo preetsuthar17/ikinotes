@@ -1,17 +1,18 @@
 'use client';
 
 // Home Components
-import { 
+import {
   AuthLoadingSection,
-  ErrorMessage, 
-  HomeHeader, 
-  NotesFilter, 
-  NotesList, 
-  OnboardingSection 
+  ErrorMessage,
+  HomeHeader,
+  NotesFilter,
+  NotesList,
+  OnboardingSection,
 } from '@/components/home';
 
 // Hooks
-import { useHomeState } from '@/hooks';export default function Home() {
+import { useHomeState } from '@/hooks';
+export default function Home() {
   const {
     loading,
     tagFilter,
