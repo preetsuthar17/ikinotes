@@ -80,3 +80,38 @@ body {
   --hu-input: 0, 0%, 16%;
   --hu-ring: 0, 0%, 50%;
 }
+
+.custom-scrollbar {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-muted) transparent;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: var(--radius-ele);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-muted);
+  border-radius: var(--radius-ele);
+  transition: background-color 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: var(--color-muted);
+}
+
+/* Hide scrollbar corner */
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}

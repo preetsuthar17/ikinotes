@@ -107,7 +107,7 @@ export function NoteEditor({
 
       <div
         className="flex flex-1 flex-col gap-3"
-        style={{ height: 'calc(100vh - 220px)' }}
+        style={{ height: 'calc(100vh-220px)' }}
       >
         <AIActionsToolbar
           aiLoading={aiLoading}
