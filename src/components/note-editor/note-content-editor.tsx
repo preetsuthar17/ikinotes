@@ -12,19 +12,19 @@ export function NoteContentEditor({
   return (
     <div className="h-full w-full">
       <Textarea
-        className="custom-scrollbar w-full bg-transparent text-base focus:outline-none border-none shadow-none p-0 h-auto rounded-ele px-0 py-2 flex-1 min-h-[calc(100vh-460px)] md:min-h-[calc(100dvh-320px)]"
+        className="custom-scrollbar h-auto min-h-[calc(100vh-460px)] w-full flex-1 rounded-ele border-none bg-transparent p-0 px-0 py-2 text-base shadow-none focus:outline-none md:min-h-[calc(100dvh-320px)]"
+        onChange={(e) => onContentChange(e.target.value)}
         style={{
-          boxShadow: "none",
-          border: "none",
-          outline: "none",
-          overflowY: "auto",
-          height: "100%",
-          maxHeight: "100%",
-          resize: "none",
-          background: "transparent",
+          boxShadow: 'none',
+          border: 'none',
+          outline: 'none',
+          overflowY: 'auto',
+          height: '100%',
+          maxHeight: '100%',
+          resize: 'none',
+          background: 'transparent',
         }}
         value={content}
-        onChange={(e) => onContentChange(e.target.value)}
       />
     </div>
   );

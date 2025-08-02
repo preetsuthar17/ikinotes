@@ -8,16 +8,31 @@ import {
 } from '@clerk/nextjs';
 import { Github, NotebookPen } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
 
 // UI Components
 import { Button } from '@/components/ui/button';
 
 interface HomeHeaderProps {
-  onCreateNote?: () => void;
+  onCreateNote?: () => Promise<void>;
   showAuth?: boolean;
 }
 
 export function HomeHeader({ onCreateNote, showAuth = true }: HomeHeaderProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCreateNote = async () => {
+    if (!onCreateNote) {
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await onCreateNote();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <header className="flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -56,7 +71,7 @@ export function HomeHeader({ onCreateNote, showAuth = true }: HomeHeaderProps) {
         </Button>
         {showAuth && (
           <SignedIn>
-            <Button onClick={onCreateNote}>
+            <Button loading={isLoading} onClick={handleCreateNote}>
               New Note
               <NotebookPen />
             </Button>

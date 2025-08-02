@@ -37,7 +37,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { title, content = '', tags = [], folderId = null } = await request.json();
+    const {
+      title,
+      content = '',
+      tags = [],
+      folderId = null,
+    } = await request.json();
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
