@@ -1,11 +1,11 @@
+import { createHash } from 'node:crypto';
 import { groq } from '@ai-sdk/groq';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { streamText } from 'ai';
+import { LRUCache } from 'lru-cache';
 import type { NextRequest } from 'next/server';
 import { sanitizeString } from '@/lib/utils';
-import { LRUCache } from 'lru-cache';
-import { createHash } from 'crypto';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -22,18 +22,33 @@ const responseCache = new LRUCache<string, string>({
   ttl: 60 * 60 * 1000,
 });
 
-const rateLimitCache = new LRUCache<string, { success: boolean; limit: number; remaining: number; reset: number }>({
+const rateLimitCache = new LRUCache<
+  string,
+  { success: boolean; limit: number; remaining: number; reset: number }
+>({
   max: 1000,
   ttl: 5 * 60 * 1000,
 });
 
 const PROMPTS = {
-  summarize: process.env.AI_PROMPT_SUMMARIZE || 'Summarize this in 4-5 sentences:\n{content}',
-  ask: process.env.AI_PROMPT_ASK || 'Given this note, answer the question clearly.\nNote:\n{content}\nQuestion: {question}\nAnswer:',
-  rewrite: process.env.AI_PROMPT_REWRITE || 'Rewrite this to be clearer, concise, and engaging:\n{content}',
-  improve: process.env.AI_PROMPT_IMPROVE || 'Suggest specific improvements for clarity, grammar, and style:\n{content}',
-  fix: process.env.AI_PROMPT_FIX || 'Correct grammar, spelling, or punctuation errors. Return the corrected note:\n{content}',
-  heading: process.env.AI_PROMPT_HEADING || 'Generate a concise, relevant, engaging title:\n{content}',
+  summarize:
+    process.env.AI_PROMPT_SUMMARIZE ||
+    'Summarize this in 4-5 sentences:\n{content}',
+  ask:
+    process.env.AI_PROMPT_ASK ||
+    'Given this note, answer the question clearly.\nNote:\n{content}\nQuestion: {question}\nAnswer:',
+  rewrite:
+    process.env.AI_PROMPT_REWRITE ||
+    'Rewrite this to be clearer, concise, and engaging:\n{content}',
+  improve:
+    process.env.AI_PROMPT_IMPROVE ||
+    'Suggest specific improvements for clarity, grammar, and style:\n{content}',
+  fix:
+    process.env.AI_PROMPT_FIX ||
+    'Correct grammar, spelling, or punctuation errors. Return the corrected note:\n{content}',
+  heading:
+    process.env.AI_PROMPT_HEADING ||
+    'Generate a concise, relevant, engaging title:\n{content}',
 };
 
 const RESPONSE_HEADERS = {
@@ -46,7 +61,8 @@ export async function POST(req: NextRequest) {
     return new Response('Invalid Content-Type', { status: 400 });
   }
 
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
   const cachedRateLimit = rateLimitCache.get(ip);
   if (cachedRateLimit) {
     if (!cachedRateLimit.success) {
@@ -86,7 +102,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  let body: { content?: string; action?: keyof typeof PROMPTS; question?: string };
+  let body: {
+    content?: string;
+    action?: keyof typeof PROMPTS;
+    question?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -102,15 +122,17 @@ export async function POST(req: NextRequest) {
     return new Response('Missing or invalid input', { status: 400 });
   }
 
-  const cacheKey = createHash('sha256').update(`${action}:${content}:${question || ''}`).digest('hex');
+  const cacheKey = createHash('sha256')
+    .update(`${action}:${content}:${question || ''}`)
+    .digest('hex');
   const cachedResponse = responseCache.get(cacheKey);
   if (cachedResponse) {
     return new Response(cachedResponse, {
       headers: {
         ...RESPONSE_HEADERS,
         'X-Cache-Hit': 'true',
-        'X-RateLimit-Limit': rateLimitCache.get(ip)!.limit.toString(),
-        'X-RateLimit-Remaining': rateLimitCache.get(ip)!.remaining.toString(),
+        'X-RateLimit-Limit': rateLimitCache.get(ip)?.limit.toString(),
+        'X-RateLimit-Remaining': rateLimitCache.get(ip)?.remaining.toString(),
       },
     });
   }
@@ -146,9 +168,8 @@ export async function POST(req: NextRequest) {
     headers: {
       ...RESPONSE_HEADERS,
       'X-Cache-Hit': 'false',
-      'X-RateLimit-Limit': rateLimitCache.get(ip)!.limit.toString(),
-      'X-RateLimit-Remaining': rateLimitCache.get(ip)!.remaining.toString(),
+      'X-RateLimit-Limit': rateLimitCache.get(ip)?.limit.toString(),
+      'X-RateLimit-Remaining': rateLimitCache.get(ip)?.remaining.toString(),
     },
   });
 }
-

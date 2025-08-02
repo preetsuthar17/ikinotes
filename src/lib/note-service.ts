@@ -26,7 +26,11 @@ function getCacheKey(method: string, url: string, body?: any): string {
   return `${method}:${url}:${body ? JSON.stringify(body) : ''}`;
 }
 
-async function fetchWithCache<T>(url: string, options: RequestInit, ttl: number = CACHE_TTL): Promise<T> {
+async function fetchWithCache<T>(
+  url: string,
+  options: RequestInit,
+  ttl: number = CACHE_TTL
+): Promise<T> {
   const cacheKey = getCacheKey(options.method || 'GET', url, options.body);
   const cached = cache.get(cacheKey);
   if (cached && cached.expiry > Date.now()) {
@@ -35,7 +39,9 @@ async function fetchWithCache<T>(url: string, options: RequestInit, ttl: number 
 
   const response = await fetch(url, options);
   if (!response.ok) {
-    throw new Error(`Failed to ${options.method?.toLowerCase() || 'fetch'} ${url.split('/').pop()}`);
+    throw new Error(
+      `Failed to ${options.method?.toLowerCase() || 'fetch'} ${url.split('/').pop()}`
+    );
   }
 
   const data = await response.json();
@@ -60,9 +66,14 @@ function transformFolder(folder: any): Folder {
   };
 }
 
-export async function getNotes(sortOrder: 'newest' | 'oldest' = 'newest'): Promise<Note[]> {
+export async function getNotes(
+  sortOrder: 'newest' | 'oldest' = 'newest'
+): Promise<Note[]> {
   const url = `/api/notes?sort=${sortOrder}`;
-  const notes = await fetchWithCache<Note[]>(url, { method: 'GET', headers: BASE_HEADERS });
+  const notes = await fetchWithCache<Note[]>(url, {
+    method: 'GET',
+    headers: BASE_HEADERS,
+  });
   return notes.map(transformNote);
 }
 
@@ -101,7 +112,10 @@ export async function updateNote(
 }
 
 export async function deleteNote(id: string): Promise<void> {
-  const response = await fetch(`/api/notes/${id}`, { method: 'DELETE', headers: BASE_HEADERS });
+  const response = await fetch(`/api/notes/${id}`, {
+    method: 'DELETE',
+    headers: BASE_HEADERS,
+  });
   if (!response.ok) {
     throw new Error('Failed to delete note');
   }
@@ -120,12 +134,18 @@ export async function getNoteById(id: string): Promise<Note | null> {
   return transformNote(await response.json());
 }
 
-export async function moveNoteToFolder(noteId: string, folderId: string | null): Promise<Note> {
+export async function moveNoteToFolder(
+  noteId: string,
+  folderId: string | null
+): Promise<Note> {
   return updateNote(noteId, { folderId });
 }
 
 export async function getFolders(): Promise<Folder[]> {
-  const folders = await fetchWithCache<Folder[]>('/api/folders', { method: 'GET', headers: BASE_HEADERS });
+  const folders = await fetchWithCache<Folder[]>('/api/folders', {
+    method: 'GET',
+    headers: BASE_HEADERS,
+  });
   return folders.map(transformFolder);
 }
 
@@ -140,14 +160,21 @@ export async function addFolder(folder: { name: string }): Promise<Folder> {
 }
 
 export async function deleteFolder(id: string): Promise<void> {
-  const response = await fetch(`/api/folders?id=${id}`, { method: 'DELETE', headers: BASE_HEADERS });
+  const response = await fetch(`/api/folders?id=${id}`, {
+    method: 'DELETE',
+    headers: BASE_HEADERS,
+  });
   if (!response.ok) {
     throw new Error('Failed to delete folder');
   }
   cache.clear();
 }
 
-export { getNotes as getNotesFromStorage, addNote as saveNote, getFolders as getFoldersFromStorage };
+export {
+  getNotes as getNotesFromStorage,
+  addNote as saveNote,
+  getFolders as getFoldersFromStorage,
+};
 
 export function saveNotes(_notes: Note[]): void {}
 export function saveFolders(_folders: Folder[]): void {}

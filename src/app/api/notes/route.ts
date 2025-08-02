@@ -1,8 +1,8 @@
+import { createHash } from 'node:crypto';
 import { auth } from '@clerk/nextjs/server';
+import { LRUCache } from 'lru-cache';
 import { type NextRequest, NextResponse } from 'next/server';
 import { addNote, getNotes } from '@/lib/db/queries';
-import { LRUCache } from 'lru-cache';
-import { createHash } from 'crypto';
 
 const notesCache = new LRUCache<string, any>({
   max: 1000,
@@ -20,8 +20,11 @@ export async function GET(request: NextRequest) {
   }
 
   const url = new URL(request.url);
-  const sortOrder = (url.searchParams.get('sort') as 'newest' | 'oldest') || 'newest';
-  const cacheKey = createHash('sha256').update(`${userId}:${sortOrder}`).digest('hex');
+  const sortOrder =
+    (url.searchParams.get('sort') as 'newest' | 'oldest') || 'newest';
+  const cacheKey = createHash('sha256')
+    .update(`${userId}:${sortOrder}`)
+    .digest('hex');
 
   const cachedNotes = notesCache.get(cacheKey);
   if (cachedNotes) {
@@ -45,13 +48,19 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch notes' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   if (request.headers.get('content-type') !== 'application/json') {
-    return NextResponse.json({ error: 'Invalid Content-Type' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid Content-Type' },
+      { status: 400 }
+    );
   }
 
   const { userId } = await auth();
@@ -76,7 +85,9 @@ export async function POST(request: NextRequest) {
     notesCache.clear();
     return NextResponse.json(note, { status: 201 });
   } catch {
-    return NextResponse.json({ error: 'Failed to create note' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create note' },
+      { status: 500 }
+    );
   }
 }
-

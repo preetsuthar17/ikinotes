@@ -1,8 +1,8 @@
+import { createHash } from 'node:crypto';
 import { auth } from '@clerk/nextjs/server';
+import { LRUCache } from 'lru-cache';
 import { type NextRequest, NextResponse } from 'next/server';
 import { deleteNote, getNoteById, updateNote } from '@/lib/db/queries';
-import { LRUCache } from 'lru-cache';
-import { createHash } from 'crypto';
 
 const noteCache = new LRUCache<string, any>({
   max: 1000,
@@ -14,7 +14,7 @@ const RESPONSE_HEADERS = {
 };
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   const { userId } = await auth();
@@ -50,7 +50,10 @@ export async function GET(
       },
     });
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch note' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch note' },
+      { status: 500 }
+    );
   }
 }
 
@@ -59,7 +62,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   if (request.headers.get('content-type') !== 'application/json') {
-    return NextResponse.json({ error: 'Invalid Content-Type' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid Content-Type' },
+      { status: 400 }
+    );
   }
 
   const { userId } = await auth();
@@ -77,7 +83,12 @@ export async function PUT(
 
   const { title, content, tags, folderId } = body;
   try {
-    const updatedNote = await updateNote(id, { title, content, tags, folderId });
+    const updatedNote = await updateNote(id, {
+      title,
+      content,
+      tags,
+      folderId,
+    });
     noteCache.clear();
     return NextResponse.json(updatedNote);
   } catch (error) {
@@ -87,7 +98,10 @@ export async function PUT(
     ) {
       return NextResponse.json({ error: 'Note not found' }, { status: 404 });
     }
-    return NextResponse.json({ error: 'Failed to update note' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update note' },
+      { status: 500 }
+    );
   }
 }
 
@@ -106,7 +120,9 @@ export async function DELETE(
     noteCache.clear();
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: 'Failed to delete note' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete note' },
+      { status: 500 }
+    );
   }
 }
-

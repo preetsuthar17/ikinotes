@@ -1,10 +1,10 @@
+import { createHash } from 'node:crypto';
 import { groq } from '@ai-sdk/groq';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { streamText } from 'ai';
-import type { NextRequest } from 'next/server';
 import { LRUCache } from 'lru-cache';
-import { createHash } from 'crypto';
+import type { NextRequest } from 'next/server';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -16,13 +16,16 @@ const ratelimit = new Ratelimit({
   limiter: Ratelimit.fixedWindow(15, '5 m'),
 });
 
-const rateLimitCache = new LRUCache<string, { success: boolean; limit: number; remaining: number; reset: number }>({
+const rateLimitCache = new LRUCache<
+  string,
+  { success: boolean; limit: number; remaining: number; reset: number }
+>({
   max: 1000,
   ttl: 5 * 60 * 1000,
 });
 const responseCache = new LRUCache<string, string>({
   max: 1000,
-  ttl: 60 * 60 * 1000, 
+  ttl: 60 * 60 * 1000,
 });
 
 const RATE_LIMIT_HEADERS = {
@@ -35,7 +38,8 @@ export async function POST(req: NextRequest) {
     return new Response('Invalid Content-Type', { status: 400 });
   }
 
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
 
   const cachedRateLimit = rateLimitCache.get(ip);
   if (cachedRateLimit) {
@@ -83,7 +87,7 @@ export async function POST(req: NextRequest) {
     if (!content || typeof content !== 'string') {
       return new Response('Missing or invalid content', { status: 400 });
     }
-  } catch (error) {
+  } catch (_error) {
     return new Response('Invalid JSON', { status: 400 });
   }
 
@@ -122,4 +126,3 @@ export async function POST(req: NextRequest) {
     },
   });
 }
-

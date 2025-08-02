@@ -34,7 +34,7 @@ export function HomeHeader({ onCreateNote, showAuth = true }: HomeHeaderProps) {
   };
 
   return (
-    <header className="flex items-center justify-between max-[350px]:flex-col  max-[350px]:justify-center  max-[350px]:gap-4">
+    <header className="flex items-center justify-between max-[350px]:flex-col max-[350px]:justify-center max-[350px]:gap-4">
       <div className="flex items-center gap-2">
         <h1 className="font-bold text-3xl tracking-tight">Iki</h1>
       </div>
@@ -50,7 +50,7 @@ export function HomeHeader({ onCreateNote, showAuth = true }: HomeHeaderProps) {
               </SignUpButton>
             </SignedOut>
             <SignedIn>
-             <Button size="icon" variant="secondary">
+              <Button size="icon" variant="secondary">
                 <UserButton />
               </Button>
             </SignedIn>

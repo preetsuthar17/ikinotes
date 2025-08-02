@@ -13,7 +13,7 @@ interface NoteItemProps {
 export function NoteItem({ note }: NoteItemProps) {
   return (
     <Link
-      className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-4 text-[#1d4ed8] max-[350px]:gap-1 max-[350px]:flex-col max-sm:items-start"
+      className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-4 text-[#1d4ed8] max-sm:items-start max-[350px]:flex-col max-[350px]:gap-1"
       href={`/new?id=${note.id}`}
     >
       <p
@@ -22,7 +22,7 @@ export function NoteItem({ note }: NoteItemProps) {
       >
         {note.title || 'Untitled Note'}
       </p>
-      <span className="text-right text-muted-foreground  max-[350px]:text-sm">
+      <span className="text-right text-muted-foreground max-[350px]:text-sm">
         {note.createdAt ? formatDate(note.createdAt) : ''}
       </span>
     </Link>

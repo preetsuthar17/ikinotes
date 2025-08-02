@@ -52,7 +52,7 @@ const Loader = React.forwardRef<SVGSVGElement, LoaderProps>(
         role="status"
         suppressHydrationWarning
         {...props}
-      ></LucideLoader>
+      />
     );
   }
 );
